@@ -364,6 +364,163 @@ body {
     color: white;
 }
 
+/* Projects Section */
+.projects-section {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.projects-section__title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-lg);
+}
+
+.projects-section__add {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.projects-section__input {
+    flex: 1;
+    padding: var(--spacing-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family);
+    transition: border-color 0.2s ease;
+}
+
+.projects-section__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.projects-section__btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.projects-section__btn:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.projects-section__btn:active {
+    transform: translateY(0);
+}
+
+/* Projects Table */
+.projects-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.projects-table__empty td {
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: var(--spacing-xl);
+    font-style: italic;
+}
+
+.projects-table__row {
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.2s ease;
+}
+
+.projects-table__row:hover {
+    background-color: var(--color-background);
+}
+
+.projects-table__row:last-child {
+    border-bottom: none;
+}
+
+.projects-table__cell {
+    padding: var(--spacing-md);
+}
+
+.projects-table__cell--name {
+    width: 60%;
+}
+
+.projects-table__cell--actions {
+    width: 40%;
+    text-align: right;
+}
+
+.projects-table__name-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.projects-table__name {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+}
+
+.projects-table__time {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.projects-table__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.projects-table__btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 40px;
+}
+
+.projects-table__btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.projects-table__btn:active {
+    transform: translateY(0);
+}
+
+.projects-table__btn--edit:hover {
+    border-color: var(--color-primary);
+    background-color: #eff6ff;
+}
+
+.projects-table__btn--time:hover {
+    border-color: var(--color-warning);
+    background-color: #fffbeb;
+}
+
+.projects-table__btn--delete:hover {
+    border-color: var(--color-danger);
+    background-color: #fef2f2;
+}
+
 /* Responsive Design */
 @media (max-width: 640px) {
     .main {
@@ -386,5 +543,27 @@ body {
     .toast {
         right: var(--spacing-md);
         left: var(--spacing-md);
+    }
+
+    .projects-section__add {
+        flex-direction: column;
+    }
+
+    .projects-table__cell--name {
+        width: 50%;
+    }
+
+    .projects-table__cell--actions {
+        width: 50%;
+    }
+
+    .projects-table__actions {
+        gap: var(--spacing-xs);
+    }
+
+    .projects-table__btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 1rem;
+        min-width: 35px;
     }
 }

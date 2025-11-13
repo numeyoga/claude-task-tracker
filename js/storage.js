@@ -1,6 +1,7 @@
 'use strict';
 
 import { TimeEntry } from './time-entry.js';
+import { Project } from './project.js';
 
 /**
  * Configuration de la base de données
@@ -260,6 +261,132 @@ export class StorageService {
                 .catch(() => {
                     reject(new Error('Erreur lors de la suppression des données'));
                 });
+        });
+    }
+
+    // ======================
+    // Méthodes publiques - Projects
+    // ======================
+
+    /**
+     * Sauvegarde un projet
+     * @param {Project} project - Projet à sauvegarder
+     * @returns {Promise<string>} ID du projet sauvegardé
+     * @throws {Error} Si la sauvegarde échoue
+     */
+    async saveProject(project) {
+        if (!(project instanceof Project)) {
+            throw new Error('Le projet doit être une instance de Project');
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECTS], 'readwrite');
+            const store = transaction.objectStore(STORES.PROJECTS);
+
+            const data = project.toJSON();
+            const request = store.put(data);
+
+            request.onsuccess = () => {
+                console.log('✅ Projet sauvegardé:', project.name);
+                resolve(project.id);
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la sauvegarde du projet'));
+            };
+        });
+    }
+
+    /**
+     * Récupère tous les projets actifs
+     * @returns {Promise<Project[]>} Liste des projets
+     * @throws {Error} Si la récupération échoue
+     */
+    async getAllProjects() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECTS], 'readonly');
+            const store = transaction.objectStore(STORES.PROJECTS);
+
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const projects = request.result
+                    .map(data => Project.fromJSON(data))
+                    .filter(project => project.active);
+
+                // Trier par date de création (plus récent en premier)
+                projects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+                resolve(projects);
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la récupération des projets'));
+            };
+        });
+    }
+
+    /**
+     * Récupère un projet par son ID
+     * @param {string} id - ID du projet
+     * @returns {Promise<Project|null>} Projet trouvé ou null
+     * @throws {Error} Si la récupération échoue
+     */
+    async getProjectById(id) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECTS], 'readonly');
+            const store = transaction.objectStore(STORES.PROJECTS);
+
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                if (request.result) {
+                    resolve(Project.fromJSON(request.result));
+                } else {
+                    resolve(null);
+                }
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la récupération du projet'));
+            };
+        });
+    }
+
+    /**
+     * Supprime un projet (marque comme inactif)
+     * @param {string} id - ID du projet à supprimer
+     * @returns {Promise<void>}
+     * @throws {Error} Si la suppression échoue
+     */
+    async deleteProject(id) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const project = await this.getProjectById(id);
+                if (!project) {
+                    reject(new Error('Projet non trouvé'));
+                    return;
+                }
+
+                project.active = false;
+                project.updatedAt = new Date();
+
+                const transaction = this.db.transaction([STORES.PROJECTS], 'readwrite');
+                const store = transaction.objectStore(STORES.PROJECTS);
+
+                const request = store.put(project.toJSON());
+
+                request.onsuccess = () => {
+                    console.log('✅ Projet supprimé:', id);
+                    resolve();
+                };
+
+                request.onerror = () => {
+                    reject(new Error('Erreur lors de la suppression du projet'));
+                };
+            } catch (error) {
+                reject(error);
+            }
         });
     }
 }
