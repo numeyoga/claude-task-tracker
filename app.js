@@ -10,6 +10,8 @@ import { TimeEntry, ENTRY_TYPES } from './js/time-entry.js';
 import { TimeCalculator } from './js/calculator.js';
 import { TimeTrackerUI } from './js/ui.js';
 import { getTodayDateString } from './js/utils.js';
+import { Project } from './js/project.js';
+import { ProjectsUI } from './js/projects-ui.js';
 
 /**
  * Contrôleur principal de l'application
@@ -20,9 +22,11 @@ class App {
         this.storage = new StorageService();
         this.calculator = new TimeCalculator();
         this.ui = new TimeTrackerUI();
+        this.projectsUI = new ProjectsUI();
 
         // État
         this.todayEntries = [];
+        this.projects = [];
         this.updateInterval = null;
 
         // Initialisation
@@ -41,12 +45,17 @@ class App {
 
             // Initialiser l'UI
             this.ui.init();
+            this.projectsUI.init();
 
             // Charger les données du jour
             await this.loadTodayData();
 
+            // Charger les projets
+            await this.loadProjects();
+
             // Configurer les écouteurs d'événements
             this.setupEventListeners();
+            this.setupProjectsEventListeners();
 
             // Démarrer la mise à jour en temps réel
             this.startRealtimeUpdate();
@@ -75,6 +84,22 @@ class App {
             this.updateUI();
         } catch (error) {
             console.error('❌ Erreur lors du chargement des données:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Charge les projets
+     */
+    async loadProjects() {
+        try {
+            this.projects = await this.storage.getAllProjects();
+
+            console.log(`📁 ${this.projects.length} projet(s) chargé(s)`);
+
+            this.updateProjectsUI();
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement des projets:', error);
             throw error;
         }
     }
@@ -167,6 +192,120 @@ class App {
     }
 
     // ======================
+    // Gestion des projets
+    // ======================
+
+    /**
+     * Met à jour l'interface utilisateur des projets
+     */
+    updateProjectsUI() {
+        this.projectsUI.renderProjects(this.projects);
+    }
+
+    /**
+     * Ajoute un nouveau projet
+     * @param {string} name - Nom du projet
+     */
+    async addProject(name) {
+        try {
+            // Créer le projet
+            const project = new Project(name);
+
+            // Sauvegarder dans IndexedDB
+            await this.storage.saveProject(project);
+
+            // Ajouter à la liste locale
+            this.projects.unshift(project);
+
+            // Mettre à jour l'UI
+            this.updateProjectsUI();
+
+            this.projectsUI.showSuccess(`Projet "${name}" ajouté avec succès`);
+
+            console.log('✅ Projet ajouté:', name);
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'ajout du projet:', error);
+            this.projectsUI.showError('Erreur lors de l\'ajout du projet');
+        }
+    }
+
+    /**
+     * Met à jour le nom d'un projet
+     * @param {string} projectId - ID du projet
+     * @param {string} newName - Nouveau nom
+     */
+    async updateProjectName(projectId, newName) {
+        try {
+            const project = this.projects.find(p => p.id === projectId);
+            if (!project) {
+                throw new Error('Projet non trouvé');
+            }
+
+            project.updateName(newName);
+
+            await this.storage.saveProject(project);
+
+            this.updateProjectsUI();
+
+            this.projectsUI.showSuccess(`Nom du projet modifié`);
+
+            console.log('✅ Nom du projet modifié:', projectId);
+        } catch (error) {
+            console.error('❌ Erreur lors de la modification du nom:', error);
+            this.projectsUI.showError('Erreur lors de la modification du nom');
+        }
+    }
+
+    /**
+     * Met à jour le temps d'un projet
+     * @param {string} projectId - ID du projet
+     * @param {number} timeSpent - Nouveau temps en millisecondes
+     */
+    async updateProjectTime(projectId, timeSpent) {
+        try {
+            const project = this.projects.find(p => p.id === projectId);
+            if (!project) {
+                throw new Error('Projet non trouvé');
+            }
+
+            project.updateTimeSpent(timeSpent);
+
+            await this.storage.saveProject(project);
+
+            this.updateProjectsUI();
+
+            this.projectsUI.showSuccess(`Temps du projet modifié`);
+
+            console.log('✅ Temps du projet modifié:', projectId);
+        } catch (error) {
+            console.error('❌ Erreur lors de la modification du temps:', error);
+            this.projectsUI.showError('Erreur lors de la modification du temps');
+        }
+    }
+
+    /**
+     * Supprime un projet
+     * @param {string} projectId - ID du projet à supprimer
+     */
+    async deleteProject(projectId) {
+        try {
+            await this.storage.deleteProject(projectId);
+
+            // Retirer de la liste locale
+            this.projects = this.projects.filter(p => p.id !== projectId);
+
+            this.updateProjectsUI();
+
+            this.projectsUI.showSuccess('Projet supprimé');
+
+            console.log('✅ Projet supprimé:', projectId);
+        } catch (error) {
+            console.error('❌ Erreur lors de la suppression du projet:', error);
+            this.projectsUI.showError('Erreur lors de la suppression du projet');
+        }
+    }
+
+    // ======================
     // Écouteurs d'événements
     // ======================
 
@@ -195,6 +334,33 @@ class App {
         });
 
         console.log('✅ Écouteurs d\'événements configurés');
+    }
+
+    /**
+     * Configure les écouteurs d'événements pour les projets
+     */
+    setupProjectsEventListeners() {
+        // Ajout d'un projet
+        this.projectsUI.onAddProject = (name) => {
+            this.addProject(name);
+        };
+
+        // Modification du nom
+        this.projectsUI.onUpdateName = (projectId, newName) => {
+            this.updateProjectName(projectId, newName);
+        };
+
+        // Modification du temps
+        this.projectsUI.onUpdateTime = (projectId, timeSpent) => {
+            this.updateProjectTime(projectId, timeSpent);
+        };
+
+        // Suppression
+        this.projectsUI.onDeleteProject = (projectId) => {
+            this.deleteProject(projectId);
+        };
+
+        console.log('✅ Écouteurs d\'événements des projets configurés');
     }
 }
 

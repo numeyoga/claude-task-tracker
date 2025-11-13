@@ -88,6 +88,34 @@
                 <li class="entries-list__empty">Aucun pointage pour aujourd'hui</li>
             </ul>
         </section>
+
+        <!-- Gestion des projets -->
+        <section class="projects-section">
+            <h2 class="projects-section__title">Projets</h2>
+
+            <!-- Formulaire d'ajout de projet -->
+            <div class="projects-section__add">
+                <input
+                    type="text"
+                    id="new-project-name"
+                    class="projects-section__input"
+                    placeholder="Nom du nouveau projet"
+                    maxlength="100"
+                />
+                <button id="add-project-btn" class="projects-section__btn">
+                    Ajouter
+                </button>
+            </div>
+
+            <!-- Tableau des projets -->
+            <table class="projects-table">
+                <tbody id="projects-list">
+                    <tr class="projects-table__empty">
+                        <td colspan="2">Aucun projet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
     </main>
 
     <!-- Footer -->
