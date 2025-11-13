@@ -58,13 +58,13 @@ Test principal qui :
 ## 📊 Rapports de tests
 
 Après l'exécution, les rapports sont générés dans :
-- `test-results/html/` - Rapport HTML interactif
+- `playwright-report/` - Rapport HTML interactif
 - `test-results/results.json` - Résultats JSON
-- Screenshots et vidéos en cas d'échec
+- `test-results/` - Screenshots et vidéos en cas d'échec
 
 Pour voir le rapport HTML :
 ```bash
-npx playwright show-report test-results/html
+npx playwright show-report
 ```
 
 ## 🐛 Débogage
