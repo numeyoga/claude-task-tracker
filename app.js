@@ -1,5 +1,5 @@
 /**
- * Claude Task Tracker
+ * Claude Time Tracker
  * Application principale
  */
 
@@ -17,7 +17,7 @@ class App {
      * Initialise l'application
      */
     init() {
-        console.log('Claude Task Tracker - Application démarrée');
+        console.log('Claude Time Tracker - Application démarrée');
         this.setupEventListeners();
     }
 
