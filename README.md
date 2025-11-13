@@ -21,3 +21,12 @@ Claude Time Tracker permet de :
 ## Documentation
 
 - [Spécifications techniques](TECHNICAL_SPEC.md) - Documentation complète du projet
+- [Guide de déploiement](DEPLOYMENT.md) - Configuration GitHub Pages et déploiement automatique
+
+## Déploiement
+
+L'application est déployée automatiquement sur GitHub Pages à chaque push sur la branche `main` ou `master`.
+
+**URL de production** : `https://<username>.github.io/claude-task-tracker/`
+
+Pour plus de détails, consultez le [guide de déploiement](DEPLOYMENT.md).
