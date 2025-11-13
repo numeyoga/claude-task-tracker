@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tests - Claude Time Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            padding: 2rem;
+            background: #1e293b;
+            color: #f8fafc;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #10b981;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .info {
+            background: #334155;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info p {
+            margin-bottom: 0.5rem;
+        }
+
+        .info code {
+            background: #1e293b;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+            color: #fbbf24;
+        }
+
+        .test-suite {
+            background: #334155;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #475569;
+        }
+
+        .test-suite h2 {
+            color: #60a5fa;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .test-suite p {
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+
+        .console-output {
+            background: #0f172a;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 2rem;
+            border: 1px solid #334155;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .console-output h2 {
+            color: #fbbf24;
+            margin-bottom: 1rem;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .status--running {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .status--success {
+            background: #10b981;
+            color: white;
+        }
+
+        .status--error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background 0.2s;
+        }
+
+        .button:hover {
+            background: #2563eb;
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .button--clear {
+            background: #64748b;
+        }
+
+        .button--clear:hover {
+            background: #475569;
+        }
+
+        .controls {
+            margin: 2rem 0;
+        }
+
+        a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .warning {
+            background: #78350f;
+            color: #fef3c7;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #fbbf24;
+            margin-bottom: 2rem;
+        }
+
+        .warning strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Tests - Claude Time Tracker</h1>
+
+    <div class="info">
+        <p><strong>Instructions:</strong></p>
+        <p>1. Ouvrir la console du navigateur (F12)</p>
+        <p>2. Les tests s'exécutent automatiquement au chargement de la page</p>
+        <p>3. Vérifier que tous les tests passent (✅)</p>
+        <p>4. En cas d'erreur, consulter les détails dans la console</p>
+    </div>
+
+    <div class="warning">
+        <strong>⚠️ Note importante</strong>
+        <p>Cette page doit être servie via HTTP (pas <code>file://</code>) car elle utilise des modules ES6.</p>
+        <p>Utilisez un serveur local comme <code>python -m http.server</code> ou Live Server.</p>
+    </div>
+
+    <div class="controls">
+        <button class="button" onclick="location.reload()">🔄 Relancer les tests</button>
+        <button class="button button--clear" onclick="console.clear()">🗑️ Vider la console</button>
+    </div>
+
+    <div class="test-suite">
+        <h2>📦 Suite de tests disponibles</h2>
+        <p>✅ <strong>time-entry.test.js</strong> - Tests du modèle TimeEntry (création, validation, sérialisation)</p>
+        <p>✅ <strong>calculator.test.js</strong> - Tests des calculs de temps et de statut</p>
+        <p>✅ <strong>utils.test.js</strong> - Tests des fonctions utilitaires</p>
+        <p>✅ <strong>storage.test.js</strong> - Tests d'IndexedDB et persistance</p>
+    </div>
+
+    <div class="console-output">
+        <h2>📊 Résultats des tests</h2>
+        <p>Ouvrez la console du navigateur pour voir les résultats détaillés (F12)</p>
+        <p>Les tests s'exécutent dans l'ordre suivant :</p>
+        <ol style="margin-left: 2rem; margin-top: 1rem; color: #94a3b8;">
+            <li>TimeEntry tests</li>
+            <li>Calculator tests</li>
+            <li>Utils tests</li>
+            <li>Storage tests (IndexedDB)</li>
+        </ol>
+    </div>
+
+    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #475569;">
+        <p style="color: #94a3b8; font-size: 0.875rem;">
+            Claude Time Tracker v2.0.0 |
+            <a href="../index.html">← Retour à l'application</a> |
+            <a href="https://github.com/numeyoga/claude-task-tracker" target="_blank">GitHub</a>
+        </p>
+    </div>
+
+    <!-- Charger tous les fichiers de tests (ES6 modules) -->
+    <script type="module">
+        console.log('🚀 Démarrage des tests...\n');
+        console.log('='.repeat(60) + '\n');
+    </script>
+
+    <script type="module" src="./time-entry.test.js"></script>
+    <script type="module">
+        console.log('\n' + '='.repeat(60) + '\n');
+    </script>
+
+    <script type="module" src="./calculator.test.js"></script>
+    <script type="module">
+        console.log('\n' + '='.repeat(60) + '\n');
+    </script>
+
+    <script type="module" src="./utils.test.js"></script>
+    <script type="module">
+        console.log('\n' + '='.repeat(60) + '\n');
+    </script>
+
+    <script type="module" src="./storage.test.js"></script>
+
+    <script type="module">
+        console.log('\n' + '='.repeat(60));
+        console.log('✅ Tous les tests ont été exécutés');
+        console.log('='.repeat(60));
+    </script>
+</body>
+</html>
