@@ -7,10 +7,95 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- En-tête -->
     <header class="header">
         <h1 class="header__title">Claude Time Tracker</h1>
+        <p class="header__subtitle">Suivi de votre temps de présence</p>
     </header>
 
-    <script src="app.js"></script>
+    <!-- Contenu principal -->
+    <main class="main">
+        <!-- Affichage du statut de la journée -->
+        <section class="status-section">
+            <div id="day-status" class="day-status day-status--not-started">
+                Pas encore commencé
+            </div>
+        </section>
+
+        <!-- Affichage du temps de présence -->
+        <section class="presence-display">
+            <div class="presence-display__main">
+                <div class="presence-display__time">
+                    <span class="presence-display__label">Temps de présence</span>
+                    <span id="presence-time" class="presence-display__value">0h 00m</span>
+                </div>
+                <div class="presence-display__progress">
+                    <span id="presence-percentage" class="presence-display__percentage">0%</span>
+                    <span class="presence-display__target">/ 8h objectif</span>
+                </div>
+            </div>
+            <div id="remaining-time" class="presence-display__remaining">
+                Reste: 8h 00m
+            </div>
+        </section>
+
+        <!-- Boutons de pointage -->
+        <section class="clock-in">
+            <h2 class="clock-in__title">Pointages</h2>
+            <div class="clock-in__buttons">
+                <button
+                    id="clock-in-btn"
+                    class="clock-in__button clock-in__button--active"
+                    disabled
+                >
+                    <span class="clock-in__button-icon">🟢</span>
+                    <span class="clock-in__button-text">Arrivée</span>
+                </button>
+
+                <button
+                    id="lunch-start-btn"
+                    class="clock-in__button"
+                    disabled
+                >
+                    <span class="clock-in__button-icon">🍽️</span>
+                    <span class="clock-in__button-text">Début pause</span>
+                </button>
+
+                <button
+                    id="lunch-end-btn"
+                    class="clock-in__button"
+                    disabled
+                >
+                    <span class="clock-in__button-icon">✅</span>
+                    <span class="clock-in__button-text">Fin pause</span>
+                </button>
+
+                <button
+                    id="clock-out-btn"
+                    class="clock-in__button"
+                    disabled
+                >
+                    <span class="clock-in__button-icon">🔴</span>
+                    <span class="clock-in__button-text">Départ</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Historique des pointages du jour -->
+        <section class="entries-section">
+            <h2 class="entries-section__title">Pointages d'aujourd'hui</h2>
+            <ul id="entries-list" class="entries-list">
+                <li class="entries-list__empty">Aucun pointage pour aujourd'hui</li>
+            </ul>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer__text">Claude Time Tracker v2.0.0</p>
+    </footer>
+
+    <!-- Script principal (ES6 module) -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
