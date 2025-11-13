@@ -23,9 +23,23 @@ Claude Time Tracker permet de :
 - [Spécifications techniques](TECHNICAL_SPEC.md) - Documentation complète du projet
 - [Guide de déploiement](DEPLOYMENT.md) - Configuration GitHub Pages et déploiement automatique
 
+## Tests
+
+Le projet utilise une suite complète de tests unitaires pour garantir la qualité du code.
+
+### Tests unitaires (100+ tests)
+
+Framework de tests minimaliste sans dépendances externes :
+- Tests pour TimeEntry, Calculator, Utils, Storage
+- Exécution locale : `python -m http.server 8000` puis ouvrir `http://localhost:8000/tests/test-runner.html`
+- 17 tests pour TimeEntry (création, validation, sérialisation)
+- 30+ tests pour Calculator (calculs de temps, états)
+- 40+ tests pour Utils (formatage, sécurité)
+- 20+ tests pour Storage (IndexedDB, persistance)
+
 ## Déploiement
 
-L'application est déployée automatiquement sur GitHub Pages à chaque push sur la branche `main` ou `master`.
+L'application est déployée automatiquement sur GitHub Pages à chaque push sur `main` ou `master`.
 
 **URL de production** : `https://<username>.github.io/claude-task-tracker/`
 
