@@ -23,7 +23,6 @@ npm-debug.log*
 
 # Node modules
 node_modules/
-package-lock.json
 
 # Test results
 test-results/
