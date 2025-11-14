@@ -11,6 +11,7 @@ import { TimeCalculator } from './js/calculator.js';
 import { TimeTrackerUI } from './js/ui.js';
 import { getTodayDateString } from './js/utils.js';
 import { Project } from './js/project.js';
+import { ProjectSession } from './js/project-session.js';
 import { ProjectsUI } from './js/projects-ui.js';
 import { ProjectTimer } from './js/timer.js';
 import { ProjectTimerUI } from './js/project-timer-ui.js';
@@ -353,6 +354,51 @@ class App {
         }
     }
 
+    /**
+     * Ajoute du temps rétroactif à un projet
+     * @param {Object} data - Données de la session {projectId, startTime, endTime, date}
+     */
+    async addRetroactiveTime(data) {
+        try {
+            const { projectId, startTime, endTime, date } = data;
+
+            // Vérifier que le projet existe
+            const project = this.projects.find(p => p.id === projectId);
+            if (!project) {
+                throw new Error('Projet non trouvé');
+            }
+
+            // Créer une session de projet avec les dates spécifiées
+            const session = new ProjectSession(projectId, startTime, endTime);
+
+            // Sauvegarder la session
+            await this.storage.saveSession(session);
+
+            // Calculer la durée de la session
+            const duration = session.getDuration();
+
+            // Ajouter le temps au projet
+            project.addTime(duration);
+            await this.storage.saveProject(project);
+
+            // Recharger les données
+            await this.loadProjects();
+            await this.loadTodaySessions();
+
+            // Si la session est pour aujourd'hui, recharger les sessions du jour
+            if (date === getTodayDateString()) {
+                await this.loadTodaySessions();
+            }
+
+            this.projectsUI.showSuccess(`Temps ajouté au projet "${project.name}"`);
+
+            console.log('✅ Temps rétroactif ajouté:', projectId, duration);
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'ajout de temps rétroactif:', error);
+            this.projectsUI.showError('Erreur lors de l\'ajout de temps rétroactif');
+        }
+    }
+
     // ======================
     // Gestion du chronomètre
     // ======================
@@ -484,6 +530,11 @@ class App {
         // Démarrage du chronomètre
         this.projectsUI.onStartProject = (projectId) => {
             this.startProject(projectId);
+        };
+
+        // Ajout de temps rétroactif
+        this.projectsUI.onAddRetroactiveTime = (data) => {
+            this.addRetroactiveTime(data);
         };
 
         console.log('✅ Écouteurs d\'événements des projets configurés');
