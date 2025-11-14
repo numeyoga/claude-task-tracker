@@ -1,6 +1,7 @@
 'use strict';
 
 import { formatDuration, createElement } from './utils.js';
+import { AddRetroactiveTimePopover } from './popover.js';
 
 /**
  * Gestion de l'interface utilisateur pour les projets
@@ -19,6 +20,7 @@ export class ProjectsUI {
         this.onUpdateTime = null;
         this.onDeleteProject = null;
         this.onStartProject = null;
+        this.onAddRetroactiveTime = null;
     }
 
     /**
@@ -167,6 +169,15 @@ export class ProjectsUI {
             this.#handleEditTime(project);
         });
 
+        // Bouton ajouter du temps rétroactif
+        const addRetroactiveBtn = createElement('button', {
+            class: 'projects-table__btn projects-table__btn--retroactive',
+            title: 'Ajouter du temps rétroactif'
+        }, '📅');
+        addRetroactiveBtn.addEventListener('click', () => {
+            this.#handleAddRetroactiveTime(project);
+        });
+
         // Bouton supprimer
         const deleteBtn = createElement('button', {
             class: 'projects-table__btn projects-table__btn--delete',
@@ -179,6 +190,7 @@ export class ProjectsUI {
         actionsContainer.appendChild(startBtn);
         actionsContainer.appendChild(editNameBtn);
         actionsContainer.appendChild(editTimeBtn);
+        actionsContainer.appendChild(addRetroactiveBtn);
         actionsContainer.appendChild(deleteBtn);
         actionsCell.appendChild(actionsContainer);
 
@@ -264,6 +276,22 @@ export class ProjectsUI {
         if (confirm && this.onDeleteProject) {
             this.onDeleteProject(project.id);
         }
+    }
+
+    /**
+     * Gère l'ajout de temps rétroactif
+     * @param {Project} project - Projet auquel ajouter du temps
+     * @private
+     */
+    #handleAddRetroactiveTime(project) {
+        // Créer et afficher la popover
+        const popover = new AddRetroactiveTimePopover(project, (data) => {
+            if (this.onAddRetroactiveTime) {
+                this.onAddRetroactiveTime(data);
+            }
+        });
+
+        popover.show();
     }
 
     /**
