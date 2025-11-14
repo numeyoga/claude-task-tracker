@@ -13,101 +13,77 @@
         <p class="header__subtitle">Suivi de votre temps de présence</p>
     </header>
 
-    <!-- Barre de présence journalière compacte -->
+    <!-- Barre de présence journalière compacte avec pointages intégrés -->
     <section class="daily-presence-bar">
         <div class="daily-presence-bar__container">
-            <div id="day-status" class="daily-presence-bar__status daily-presence-bar__status--not-started">
-                Pas encore commencé
+            <!-- Indicateurs de présence -->
+            <div class="daily-presence-bar__left">
+                <div id="day-status" class="daily-presence-bar__status daily-presence-bar__status--not-started">
+                    Pas encore commencé
+                </div>
+                <div class="daily-presence-bar__divider"></div>
+                <div class="daily-presence-bar__time">
+                    <span class="daily-presence-bar__label">Temps de présence</span>
+                    <span id="presence-time" class="daily-presence-bar__value">0h 00m</span>
+                </div>
+                <div class="daily-presence-bar__progress">
+                    <span id="presence-percentage" class="daily-presence-bar__percentage">0%</span>
+                    <span class="daily-presence-bar__target">/ 8h</span>
+                </div>
+                <div class="daily-presence-bar__remaining" id="remaining-time">
+                    Reste: 8h 00m
+                </div>
             </div>
-            <div class="daily-presence-bar__divider"></div>
-            <div class="daily-presence-bar__time">
-                <span class="daily-presence-bar__label">Temps de présence</span>
-                <span id="presence-time" class="daily-presence-bar__value">0h 00m</span>
+
+            <!-- Boutons de pointage intégrés -->
+            <div class="daily-presence-bar__actions">
+                <button id="clock-in-btn" class="presence-btn presence-btn--active" disabled>
+                    <span class="presence-btn__icon">🟢</span>
+                    <span class="presence-btn__text">Arrivée</span>
+                </button>
+                <button id="lunch-start-btn" class="presence-btn" disabled>
+                    <span class="presence-btn__icon">🍽️</span>
+                    <span class="presence-btn__text">Pause</span>
+                </button>
+                <button id="lunch-end-btn" class="presence-btn" disabled>
+                    <span class="presence-btn__icon">✅</span>
+                    <span class="presence-btn__text">Reprise</span>
+                </button>
+                <button id="clock-out-btn" class="presence-btn" disabled>
+                    <span class="presence-btn__icon">🔴</span>
+                    <span class="presence-btn__text">Départ</span>
+                </button>
             </div>
-            <div class="daily-presence-bar__progress">
-                <span id="presence-percentage" class="daily-presence-bar__percentage">0%</span>
-                <span class="daily-presence-bar__target">/ 8h</span>
-            </div>
-            <div class="daily-presence-bar__remaining" id="remaining-time">
-                Reste: 8h 00m
-            </div>
+        </div>
+
+        <!-- Historique des pointages (pliable) -->
+        <div class="daily-presence-bar__history">
+            <button id="toggle-entries-btn" class="history-toggle">
+                <span id="toggle-entries-icon">▼</span>
+                <span>Pointages d'aujourd'hui</span>
+            </button>
+            <ul id="entries-list" class="history-list history-list--hidden">
+                <li class="history-list__empty">Aucun pointage pour aujourd'hui</li>
+            </ul>
         </div>
     </section>
 
     <!-- Contenu principal -->
     <main class="main">
-        <!-- Colonne gauche - Suivi de présence -->
-        <div class="main__left">
-
-            <!-- Boutons de pointage -->
-            <section class="clock-in">
-                <h2 class="clock-in__title">Pointages</h2>
-                <div class="clock-in__buttons">
-                    <button
-                        id="clock-in-btn"
-                        class="clock-in__button clock-in__button--active"
-                        disabled
-                    >
-                        <span class="clock-in__button-icon">🟢</span>
-                        <span class="clock-in__button-text">Arrivée</span>
-                    </button>
-
-                    <button
-                        id="lunch-start-btn"
-                        class="clock-in__button"
-                        disabled
-                    >
-                        <span class="clock-in__button-icon">🍽️</span>
-                        <span class="clock-in__button-text">Début pause</span>
-                    </button>
-
-                    <button
-                        id="lunch-end-btn"
-                        class="clock-in__button"
-                        disabled
-                    >
-                        <span class="clock-in__button-icon">✅</span>
-                        <span class="clock-in__button-text">Fin pause</span>
-                    </button>
-
-                    <button
-                        id="clock-out-btn"
-                        class="clock-in__button"
-                        disabled
-                    >
-                        <span class="clock-in__button-icon">🔴</span>
-                        <span class="clock-in__button-text">Départ</span>
-                    </button>
+        <!-- Zone de gestion de projets (toute la largeur) -->
+        <div class="main__projects">
+            <!-- Affichage du chronomètre - Version compacte horizontale -->
+            <section class="timer-display-compact timer-display-compact--stopped" id="timer-display">
+                <div class="timer-compact__status">
+                    <span class="timer-compact__label">Chronomètre</span>
+                    <span id="timer-project-name" class="timer-compact__project">Aucun projet</span>
                 </div>
-            </section>
-
-            <!-- Historique des pointages du jour -->
-            <section class="entries-section">
-                <h2 class="entries-section__title">Pointages d'aujourd'hui</h2>
-                <ul id="entries-list" class="entries-list">
-                    <li class="entries-list__empty">Aucun pointage pour aujourd'hui</li>
-                </ul>
-            </section>
-        </div>
-
-        <!-- Colonne droite - Gestion de projets -->
-        <div class="main__right">
-            <!-- Affichage du chronomètre -->
-            <section class="timer-display timer-display--stopped" id="timer-display">
-                <div class="timer-display__header">
-                    <h2 class="timer-display__title">Chronomètre</h2>
-                    <button id="stop-timer-btn" class="timer-display__stop-btn">
-                        ⏹️ Arrêter
-                    </button>
+                <div class="timer-compact__time">
+                    <span id="timer-duration" class="timer-compact__duration">0h 00m</span>
                 </div>
-                <div class="timer-display__content">
-                    <div id="timer-project-name" class="timer-display__project">
-                        Aucun projet en cours
-                    </div>
-                    <div id="timer-duration" class="timer-display__duration">
-                        0h 00m
-                    </div>
-                </div>
+                <button id="stop-timer-btn" class="timer-compact__stop-btn">
+                    ⏹️ Arrêter
+                </button>
             </section>
 
             <!-- Gestion des projets -->

@@ -500,6 +500,18 @@ class App {
             this.recordEntry(ENTRY_TYPES.CLOCK_OUT);
         });
 
+        // Toggle de l'historique des pointages
+        const toggleEntriesBtn = document.getElementById('toggle-entries-btn');
+        const entriesList = document.getElementById('entries-list');
+        const toggleIcon = document.getElementById('toggle-entries-icon');
+
+        if (toggleEntriesBtn && entriesList && toggleIcon) {
+            toggleEntriesBtn.addEventListener('click', () => {
+                entriesList.classList.toggle('history-list--hidden');
+                toggleIcon.textContent = entriesList.classList.contains('history-list--hidden') ? '▼' : '▲';
+            });
+        }
+
         console.log('✅ Écouteurs d\'événements configurés');
     }
 
