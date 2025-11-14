@@ -6,6 +6,8 @@ import { createElement } from './utils.js';
  * Classe pour gérer les popovers
  */
 export class Popover {
+    #handleEscape = null;
+
     /**
      * @param {string} title - Titre de la popover
      */
