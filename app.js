@@ -14,6 +14,9 @@ import { Project } from './js/project.js';
 import { ProjectsUI } from './js/projects-ui.js';
 import { ProjectTimer } from './js/timer.js';
 import { ProjectTimerUI } from './js/project-timer-ui.js';
+import { WeeklyReportCalculator } from './js/weekly-report.js';
+import { DataExporter, ExportFormat, ExportType } from './js/data-export.js';
+import { ReportsUI } from './js/reports-ui.js';
 
 /**
  * Contrôleur principal de l'application
@@ -27,12 +30,21 @@ class App {
         this.projectsUI = new ProjectsUI();
         this.timer = null; // Initialisé après storage
         this.timerUI = new ProjectTimerUI();
+        this.reportCalculator = new WeeklyReportCalculator();
+        this.dataExporter = new DataExporter();
+        this.reportsUI = new ReportsUI();
 
         // État
         this.todayEntries = [];
         this.projects = [];
         this.todaySessions = [];
         this.updateInterval = null;
+
+        // État des rapports
+        this.currentPeriodType = 'week'; // 'week' ou 'month'
+        this.currentPeriodStart = null;
+        this.currentPeriodEnd = null;
+        this.currentReport = null;
 
         // Initialisation
         this.init();
@@ -56,6 +68,7 @@ class App {
             this.ui.init();
             this.projectsUI.init();
             this.timerUI.init();
+            this.reportsUI.init();
 
             // Charger les données du jour
             await this.loadTodayData();
@@ -66,10 +79,14 @@ class App {
             // Charger les sessions du jour
             await this.loadTodaySessions();
 
+            // Initialiser et charger le rapport de la semaine courante
+            await this.loadCurrentReport();
+
             // Configurer les écouteurs d'événements
             this.setupEventListeners();
             this.setupProjectsEventListeners();
             this.setupTimerEventListeners();
+            this.setupReportsEventListeners();
 
             // Démarrer la mise à jour en temps réel
             this.startRealtimeUpdate();
@@ -502,6 +519,221 @@ class App {
         };
 
         console.log('✅ Écouteurs d\'événements du chronomètre configurés');
+    }
+
+    // ======================
+    // Gestion des rapports (Phase 3)
+    // ======================
+
+    /**
+     * Charge le rapport pour la période courante
+     */
+    async loadCurrentReport() {
+        try {
+            // Définir la période en fonction du type
+            if (this.currentPeriodType === 'week') {
+                this.currentPeriodStart = this.reportCalculator.getWeekStart();
+                this.currentPeriodEnd = this.reportCalculator.getWeekEnd();
+            } else {
+                this.currentPeriodStart = this.reportCalculator.getMonthStart();
+                this.currentPeriodEnd = this.reportCalculator.getMonthEnd();
+            }
+
+            // Charger toutes les données nécessaires pour la période
+            const dateRange = this.reportCalculator.generateDateRange(this.currentPeriodStart, this.currentPeriodEnd);
+
+            // Charger les entrées et sessions pour toute la période
+            const allEntries = [];
+            const allSessions = [];
+
+            for (const date of dateRange) {
+                const entries = await this.storage.getEntriesByDate(date);
+                const sessions = await this.storage.getSessionsByDate(date);
+                allEntries.push(...entries);
+                allSessions.push(...sessions);
+            }
+
+            // Calculer les statistiques
+            this.currentReport = this.reportCalculator.calculatePeriodStats({
+                startDate: this.currentPeriodStart,
+                endDate: this.currentPeriodEnd,
+                entries: allEntries,
+                sessions: allSessions,
+                projects: this.projects
+            });
+
+            // Mettre à jour l'interface
+            this.updateReportsUI();
+
+            console.log('✅ Rapport chargé pour la période:', this.reportCalculator.formatDateRange(this.currentPeriodStart, this.currentPeriodEnd));
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement du rapport:', error);
+            this.reportsUI.showError('Erreur lors du chargement du rapport');
+        }
+    }
+
+    /**
+     * Met à jour l'interface utilisateur des rapports
+     */
+    updateReportsUI() {
+        if (!this.currentReport) return;
+
+        // Mettre à jour le label de la période
+        const periodLabel = this.reportCalculator.formatDateRange(this.currentPeriodStart, this.currentPeriodEnd);
+        this.reportsUI.updatePeriodLabel(periodLabel);
+
+        // Mettre à jour les statistiques globales
+        this.reportsUI.updateSummary(this.currentReport);
+
+        // Afficher les statistiques par projet
+        this.reportsUI.renderProjectStats(this.currentReport.projectStats);
+
+        // Afficher les jours incomplets
+        this.reportsUI.renderIncompleteDays(this.currentReport.incompleteDaysList);
+
+        // Afficher le graphique quotidien
+        this.reportsUI.renderDailyChart(this.currentReport.dailyStats);
+
+        // Mettre à jour le bouton actif
+        this.reportsUI.setActivePeriod(this.currentPeriodType);
+    }
+
+    /**
+     * Change le type de période (semaine/mois)
+     * @param {string} periodType - Type de période ('week' ou 'month')
+     */
+    async changePeriodType(periodType) {
+        this.currentPeriodType = periodType;
+        await this.loadCurrentReport();
+    }
+
+    /**
+     * Navigue vers la période précédente ou suivante
+     * @param {string} direction - Direction ('prev' ou 'next')
+     */
+    async navigatePeriod(direction) {
+        const offset = direction === 'prev' ? -1 : 1;
+
+        if (this.currentPeriodType === 'week') {
+            // Déplacer d'une semaine
+            this.currentPeriodStart.setDate(this.currentPeriodStart.getDate() + (offset * 7));
+            this.currentPeriodEnd.setDate(this.currentPeriodEnd.getDate() + (offset * 7));
+        } else {
+            // Déplacer d'un mois
+            this.currentPeriodStart.setMonth(this.currentPeriodStart.getMonth() + offset);
+            this.currentPeriodEnd = this.reportCalculator.getMonthEnd(this.currentPeriodStart);
+        }
+
+        await this.loadCurrentReport();
+    }
+
+    /**
+     * Exporte le rapport en CSV
+     */
+    async exportReportCSV() {
+        try {
+            if (!this.currentReport) {
+                this.reportsUI.showError('Aucun rapport à exporter');
+                return;
+            }
+
+            this.dataExporter.exportAndDownload({
+                type: ExportType.WEEKLY_REPORT,
+                format: ExportFormat.CSV,
+                data: { report: this.currentReport }
+            });
+
+            this.reportsUI.showSuccess('Rapport exporté en CSV');
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'export CSV:', error);
+            this.reportsUI.showError('Erreur lors de l\'export CSV');
+        }
+    }
+
+    /**
+     * Exporte le rapport en JSON
+     */
+    async exportReportJSON() {
+        try {
+            if (!this.currentReport) {
+                this.reportsUI.showError('Aucun rapport à exporter');
+                return;
+            }
+
+            this.dataExporter.exportAndDownload({
+                type: ExportType.WEEKLY_REPORT,
+                format: ExportFormat.JSON,
+                data: { report: this.currentReport }
+            });
+
+            this.reportsUI.showSuccess('Rapport exporté en JSON');
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'export JSON:', error);
+            this.reportsUI.showError('Erreur lors de l\'export JSON');
+        }
+    }
+
+    /**
+     * Exporte toutes les données de l'application
+     */
+    async exportAllData() {
+        try {
+            // Charger toutes les données
+            const allEntries = await this.storage.getAllEntries();
+            const allSessions = await this.storage.getAllProjects();
+
+            // Récupérer toutes les sessions
+            const allProjectSessions = [];
+            for (const project of this.projects) {
+                const sessions = await this.storage.getSessionsByProject(project.id);
+                allProjectSessions.push(...sessions);
+            }
+
+            this.dataExporter.exportAndDownload({
+                type: ExportType.ALL_DATA,
+                format: ExportFormat.JSON,
+                data: {
+                    entries: allEntries,
+                    projects: this.projects,
+                    sessions: allProjectSessions
+                }
+            });
+
+            this.reportsUI.showSuccess('Toutes les données exportées');
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'export de toutes les données:', error);
+            this.reportsUI.showError('Erreur lors de l\'export de toutes les données');
+        }
+    }
+
+    /**
+     * Configure les écouteurs d'événements pour les rapports
+     */
+    setupReportsEventListeners() {
+        // Changement de type de période
+        this.reportsUI.onPeriodTypeChange = (periodType) => {
+            this.changePeriodType(periodType);
+        };
+
+        // Navigation de période
+        this.reportsUI.onPeriodNavigate = (direction) => {
+            this.navigatePeriod(direction);
+        };
+
+        // Export des rapports
+        this.reportsUI.onExportReportCSV = () => {
+            this.exportReportCSV();
+        };
+
+        this.reportsUI.onExportReportJSON = () => {
+            this.exportReportJSON();
+        };
+
+        this.reportsUI.onExportAllData = () => {
+            this.exportAllData();
+        };
+
+        console.log('✅ Écouteurs d\'événements des rapports configurés');
     }
 }
 

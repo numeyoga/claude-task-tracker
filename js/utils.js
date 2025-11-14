@@ -136,3 +136,26 @@ export function createElement(tag, attributes = {}, children = null) {
 
     return element;
 }
+
+/**
+ * Échappe une chaîne pour l'utilisation dans un fichier CSV
+ * @param {string} str - Chaîne à échapper
+ * @returns {string} Chaîne échappée pour CSV
+ * @example
+ * sanitizeForCSV('Hello, World') // '"Hello, World"'
+ * sanitizeForCSV('Value with "quotes"') // '"Value with ""quotes"""'
+ */
+export function sanitizeForCSV(str) {
+    if (!str && str !== 0) return '';
+
+    const stringValue = String(str);
+
+    // Si la chaîne contient des virgules, guillemets ou retours à la ligne, on l'entoure de guillemets
+    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n') || stringValue.includes('\r')) {
+        // Doubler les guillemets existants
+        const escaped = stringValue.replace(/"/g, '""');
+        return `"${escaped}"`;
+    }
+
+    return stringValue;
+}
