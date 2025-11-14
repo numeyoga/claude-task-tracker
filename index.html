@@ -13,33 +13,31 @@
         <p class="header__subtitle">Suivi de votre temps de présence</p>
     </header>
 
+    <!-- Barre de présence journalière compacte -->
+    <section class="daily-presence-bar">
+        <div class="daily-presence-bar__container">
+            <div id="day-status" class="daily-presence-bar__status daily-presence-bar__status--not-started">
+                Pas encore commencé
+            </div>
+            <div class="daily-presence-bar__divider"></div>
+            <div class="daily-presence-bar__time">
+                <span class="daily-presence-bar__label">Temps de présence</span>
+                <span id="presence-time" class="daily-presence-bar__value">0h 00m</span>
+            </div>
+            <div class="daily-presence-bar__progress">
+                <span id="presence-percentage" class="daily-presence-bar__percentage">0%</span>
+                <span class="daily-presence-bar__target">/ 8h</span>
+            </div>
+            <div class="daily-presence-bar__remaining" id="remaining-time">
+                Reste: 8h 00m
+            </div>
+        </div>
+    </section>
+
     <!-- Contenu principal -->
     <main class="main">
         <!-- Colonne gauche - Suivi de présence -->
         <div class="main__left">
-            <!-- Affichage du statut de la journée -->
-            <section class="status-section">
-                <div id="day-status" class="day-status day-status--not-started">
-                    Pas encore commencé
-                </div>
-            </section>
-
-            <!-- Affichage du temps de présence -->
-            <section class="presence-display">
-                <div class="presence-display__main">
-                    <div class="presence-display__time">
-                        <span class="presence-display__label">Temps de présence</span>
-                        <span id="presence-time" class="presence-display__value">0h 00m</span>
-                    </div>
-                    <div class="presence-display__progress">
-                        <span id="presence-percentage" class="presence-display__percentage">0%</span>
-                        <span class="presence-display__target">/ 8h objectif</span>
-                    </div>
-                </div>
-                <div id="remaining-time" class="presence-display__remaining">
-                    Reste: 8h 00m
-                </div>
-            </section>
 
             <!-- Boutons de pointage -->
             <section class="clock-in">

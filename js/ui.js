@@ -112,15 +112,15 @@ export class TimeTrackerUI {
 
             // Changer la couleur selon le pourcentage
             if (percentage >= 100) {
-                this.elements.presencePercentage.classList.add('presence-display__percentage--complete');
-                this.elements.presencePercentage.classList.remove('presence-display__percentage--warning');
+                this.elements.presencePercentage.classList.add('daily-presence-bar__percentage--complete');
+                this.elements.presencePercentage.classList.remove('daily-presence-bar__percentage--warning');
             } else if (percentage >= 90) {
-                this.elements.presencePercentage.classList.add('presence-display__percentage--warning');
-                this.elements.presencePercentage.classList.remove('presence-display__percentage--complete');
+                this.elements.presencePercentage.classList.add('daily-presence-bar__percentage--warning');
+                this.elements.presencePercentage.classList.remove('daily-presence-bar__percentage--complete');
             } else {
                 this.elements.presencePercentage.classList.remove(
-                    'presence-display__percentage--complete',
-                    'presence-display__percentage--warning'
+                    'daily-presence-bar__percentage--complete',
+                    'daily-presence-bar__percentage--warning'
                 );
             }
         }
@@ -151,7 +151,7 @@ export class TimeTrackerUI {
         };
 
         this.elements.dayStatus.textContent = statusLabels[status] || status;
-        this.elements.dayStatus.className = `day-status day-status--${status}`;
+        this.elements.dayStatus.className = `daily-presence-bar__status daily-presence-bar__status--${status}`;
     }
 
     // ======================
