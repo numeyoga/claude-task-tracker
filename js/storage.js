@@ -2,6 +2,7 @@
 
 import { TimeEntry } from './time-entry.js';
 import { Project } from './project.js';
+import { ProjectSession } from './project-session.js';
 
 /**
  * Configuration de la base de données
@@ -387,6 +388,179 @@ export class StorageService {
             } catch (error) {
                 reject(error);
             }
+        });
+    }
+
+    // ======================
+    // Méthodes publiques - ProjectSessions
+    // ======================
+
+    /**
+     * Sauvegarde une session de projet
+     * @param {ProjectSession} session - Session à sauvegarder
+     * @returns {Promise<string>} ID de la session sauvegardée
+     * @throws {Error} Si la sauvegarde échoue
+     */
+    async saveSession(session) {
+        if (!(session instanceof ProjectSession)) {
+            throw new Error('La session doit être une instance de ProjectSession');
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readwrite');
+            const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
+
+            const data = session.toJSON();
+            const request = store.put(data);
+
+            request.onsuccess = () => {
+                console.log('✅ Session sauvegardée:', session.id);
+                resolve(session.id);
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la sauvegarde de la session'));
+            };
+        });
+    }
+
+    /**
+     * Récupère toutes les sessions d'un projet
+     * @param {string} projectId - ID du projet
+     * @returns {Promise<ProjectSession[]>} Liste des sessions
+     * @throws {Error} Si la récupération échoue
+     */
+    async getSessionsByProject(projectId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readonly');
+            const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
+            const index = store.index('projectId');
+
+            const request = index.getAll(projectId);
+
+            request.onsuccess = () => {
+                const sessions = request.result.map(data => ProjectSession.fromJSON(data));
+
+                // Trier par date de début (plus récent en premier)
+                sessions.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+
+                resolve(sessions);
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la récupération des sessions'));
+            };
+        });
+    }
+
+    /**
+     * Récupère toutes les sessions d'un jour donné
+     * @param {string} date - Date au format YYYY-MM-DD
+     * @returns {Promise<ProjectSession[]>} Liste des sessions
+     * @throws {Error} Si la récupération échoue
+     */
+    async getSessionsByDate(date) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readonly');
+            const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
+            const index = store.index('date');
+
+            const request = index.getAll(date);
+
+            request.onsuccess = () => {
+                const sessions = request.result.map(data => ProjectSession.fromJSON(data));
+
+                // Trier par date de début (plus ancien en premier)
+                sessions.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+                resolve(sessions);
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la récupération des sessions'));
+            };
+        });
+    }
+
+    /**
+     * Récupère une session par son ID
+     * @param {string} id - ID de la session
+     * @returns {Promise<ProjectSession|null>} Session trouvée ou null
+     * @throws {Error} Si la récupération échoue
+     */
+    async getSessionById(id) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readonly');
+            const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
+
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                if (request.result) {
+                    resolve(ProjectSession.fromJSON(request.result));
+                } else {
+                    resolve(null);
+                }
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la récupération de la session'));
+            };
+        });
+    }
+
+    /**
+     * Récupère la session en cours (non terminée) s'il y en a une
+     * @returns {Promise<ProjectSession|null>} Session en cours ou null
+     * @throws {Error} Si la récupération échoue
+     */
+    async getCurrentSession() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readonly');
+            const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
+
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const sessions = request.result
+                    .map(data => ProjectSession.fromJSON(data))
+                    .filter(session => session.isRunning());
+
+                // Il ne devrait y avoir qu'une seule session en cours
+                if (sessions.length > 0) {
+                    resolve(sessions[0]);
+                } else {
+                    resolve(null);
+                }
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la récupération de la session en cours'));
+            };
+        });
+    }
+
+    /**
+     * Supprime une session par son ID
+     * @param {string} id - ID de la session à supprimer
+     * @returns {Promise<void>}
+     * @throws {Error} Si la suppression échoue
+     */
+    async deleteSession(id) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readwrite');
+            const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
+
+            const request = store.delete(id);
+
+            request.onsuccess = () => {
+                console.log('✅ Session supprimée:', id);
+                resolve();
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la suppression de la session'));
+            };
         });
     }
 }

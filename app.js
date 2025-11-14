@@ -12,6 +12,8 @@ import { TimeTrackerUI } from './js/ui.js';
 import { getTodayDateString } from './js/utils.js';
 import { Project } from './js/project.js';
 import { ProjectsUI } from './js/projects-ui.js';
+import { ProjectTimer } from './js/timer.js';
+import { ProjectTimerUI } from './js/project-timer-ui.js';
 
 /**
  * Contrôleur principal de l'application
@@ -23,10 +25,13 @@ class App {
         this.calculator = new TimeCalculator();
         this.ui = new TimeTrackerUI();
         this.projectsUI = new ProjectsUI();
+        this.timer = null; // Initialisé après storage
+        this.timerUI = new ProjectTimerUI();
 
         // État
         this.todayEntries = [];
         this.projects = [];
+        this.todaySessions = [];
         this.updateInterval = null;
 
         // Initialisation
@@ -43,9 +48,14 @@ class App {
             // Initialiser IndexedDB
             await this.storage.init();
 
+            // Initialiser le timer
+            this.timer = new ProjectTimer(this.storage);
+            await this.timer.init();
+
             // Initialiser l'UI
             this.ui.init();
             this.projectsUI.init();
+            this.timerUI.init();
 
             // Charger les données du jour
             await this.loadTodayData();
@@ -53,9 +63,13 @@ class App {
             // Charger les projets
             await this.loadProjects();
 
+            // Charger les sessions du jour
+            await this.loadTodaySessions();
+
             // Configurer les écouteurs d'événements
             this.setupEventListeners();
             this.setupProjectsEventListeners();
+            this.setupTimerEventListeners();
 
             // Démarrer la mise à jour en temps réel
             this.startRealtimeUpdate();
@@ -100,6 +114,23 @@ class App {
             this.updateProjectsUI();
         } catch (error) {
             console.error('❌ Erreur lors du chargement des projets:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Charge les sessions de projet du jour
+     */
+    async loadTodaySessions() {
+        try {
+            const today = getTodayDateString();
+            this.todaySessions = await this.storage.getSessionsByDate(today);
+
+            console.log(`⏱️ ${this.todaySessions.length} session(s) chargée(s) pour aujourd'hui`);
+
+            this.updateTimerUI();
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement des sessions:', error);
             throw error;
         }
     }
@@ -306,6 +337,79 @@ class App {
     }
 
     // ======================
+    // Gestion du chronomètre
+    // ======================
+
+    /**
+     * Démarre le chronomètre pour un projet
+     * @param {string} projectId - ID du projet
+     */
+    async startProject(projectId) {
+        try {
+            // Démarrer le timer (ou basculer si déjà en cours)
+            if (this.timer.isRunning()) {
+                await this.timer.switchTo(projectId);
+                this.timerUI.showSuccess('Projet changé');
+            } else {
+                await this.timer.start(projectId);
+                this.timerUI.showSuccess('Chronomètre démarré');
+            }
+
+            // Recharger les sessions et mettre à jour l'UI
+            await this.loadTodaySessions();
+
+            console.log('✅ Chronomètre démarré pour le projet:', projectId);
+        } catch (error) {
+            console.error('❌ Erreur lors du démarrage du chronomètre:', error);
+            this.timerUI.showError(error.message || 'Erreur lors du démarrage du chronomètre');
+        }
+    }
+
+    /**
+     * Arrête le chronomètre en cours
+     */
+    async stopTimer() {
+        try {
+            const session = await this.timer.stop();
+
+            if (session) {
+                // Recharger les sessions
+                await this.loadTodaySessions();
+
+                this.timerUI.showSuccess('Chronomètre arrêté');
+
+                console.log('✅ Chronomètre arrêté');
+            }
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'arrêt du chronomètre:', error);
+            this.timerUI.showError(error.message || 'Erreur lors de l\'arrêt du chronomètre');
+        }
+    }
+
+    /**
+     * Met à jour l'interface du chronomètre
+     */
+    updateTimerUI() {
+        // Mettre à jour l'affichage du timer
+        const currentProjectId = this.timer ? this.timer.getCurrentProjectId() : null;
+
+        if (currentProjectId) {
+            const project = this.projects.find(p => p.id === currentProjectId);
+            const duration = this.timer.getElapsedTime();
+
+            this.timerUI.updateTimer(currentProjectId, project?.name, duration);
+            this.timerUI.updateCurrentProjectIndicator(currentProjectId);
+        } else {
+            this.timerUI.updateTimer(null, null, 0);
+            this.timerUI.updateCurrentProjectIndicator(null);
+        }
+
+        // Calculer et afficher les statistiques
+        const stats = this.calculator.calculateProjectStats(this.todaySessions, this.projects);
+        this.timerUI.renderStats(stats);
+    }
+
+    // ======================
     // Écouteurs d'événements
     // ======================
 
@@ -360,7 +464,44 @@ class App {
             this.deleteProject(projectId);
         };
 
+        // Démarrage du chronomètre
+        this.projectsUI.onStartProject = (projectId) => {
+            this.startProject(projectId);
+        };
+
         console.log('✅ Écouteurs d\'événements des projets configurés');
+    }
+
+    /**
+     * Configure les écouteurs d'événements pour le chronomètre
+     */
+    setupTimerEventListeners() {
+        // Mise à jour du timer (appelé chaque seconde)
+        this.timer.onTick = (projectId, elapsed) => {
+            const project = this.projects.find(p => p.id === projectId);
+            this.timerUI.updateTimer(projectId, project?.name, elapsed);
+
+            // Mettre à jour les statistiques aussi (pour la session en cours)
+            const stats = this.calculator.calculateProjectStats(this.todaySessions, this.projects);
+            this.timerUI.renderStats(stats);
+        };
+
+        // Démarrage du timer
+        this.timer.onStart = (projectId) => {
+            this.updateTimerUI();
+        };
+
+        // Arrêt du timer
+        this.timer.onStop = (projectId) => {
+            this.updateTimerUI();
+        };
+
+        // Bouton d'arrêt du timer
+        this.timerUI.onStopTimer = () => {
+            this.stopTimer();
+        };
+
+        console.log('✅ Écouteurs d\'événements du chronomètre configurés');
     }
 }
 
