@@ -77,6 +77,141 @@ body {
     font-weight: 400;
 }
 
+/* Daily Presence Bar - Barre compacte horizontale */
+.daily-presence-bar {
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+}
+
+.daily-presence-bar__container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: var(--spacing-md) var(--spacing-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.daily-presence-bar__status {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    border: 2px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.daily-presence-bar__status--not-started {
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-secondary);
+    background-color: var(--color-background);
+}
+
+.daily-presence-bar__status--morning {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background-color: #eff6ff;
+}
+
+.daily-presence-bar__status--lunch {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+    background-color: #fffbeb;
+}
+
+.daily-presence-bar__status--afternoon {
+    border-color: var(--color-success);
+    color: var(--color-success);
+    background-color: #f0fdf4;
+}
+
+.daily-presence-bar__status--completed {
+    border-color: var(--color-success);
+    color: var(--color-success);
+    background-color: #f0fdf4;
+}
+
+.daily-presence-bar__divider {
+    width: 1px;
+    height: 30px;
+    background-color: var(--color-border);
+}
+
+.daily-presence-bar__time {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.daily-presence-bar__label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.daily-presence-bar__value {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    white-space: nowrap;
+}
+
+.daily-presence-bar__progress {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-xs);
+}
+
+.daily-presence-bar__percentage {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-text-secondary);
+}
+
+.daily-presence-bar__percentage--warning {
+    color: var(--color-warning);
+}
+
+.daily-presence-bar__percentage--complete {
+    color: var(--color-success);
+}
+
+.daily-presence-bar__target {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.daily-presence-bar__remaining {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+/* Responsive pour la barre de présence */
+@media (max-width: 767px) {
+    .daily-presence-bar__container {
+        padding: var(--spacing-sm) var(--spacing-md);
+        gap: var(--spacing-sm);
+    }
+
+    .daily-presence-bar__divider {
+        display: none;
+    }
+
+    .daily-presence-bar__remaining {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+    }
+}
+
 /* Main Content */
 .main {
     max-width: 1600px;
@@ -110,119 +245,6 @@ body {
         max-height: calc(100vh - var(--header-height, 100px) - var(--spacing-xl) * 2);
         overflow-y: auto;
     }
-}
-
-/* Status Section */
-.status-section {
-    margin-bottom: 0;
-}
-
-.day-status {
-    background-color: var(--color-surface);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    text-align: center;
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    box-shadow: var(--shadow-md);
-    border: 2px solid var(--color-border);
-}
-
-.day-status--not-started {
-    border-color: var(--color-text-secondary);
-    color: var(--color-text-secondary);
-}
-
-.day-status--morning {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background-color: #eff6ff;
-}
-
-.day-status--lunch {
-    border-color: var(--color-warning);
-    color: var(--color-warning);
-    background-color: #fffbeb;
-}
-
-.day-status--afternoon {
-    border-color: var(--color-success);
-    color: var(--color-success);
-    background-color: #f0fdf4;
-}
-
-.day-status--completed {
-    border-color: var(--color-success);
-    color: var(--color-success);
-    background-color: #f0fdf4;
-}
-
-/* Presence Display */
-.presence-display {
-    background-color: var(--color-surface);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    margin-bottom: 0;
-    box-shadow: var(--shadow-md);
-}
-
-.presence-display__main {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-    flex-wrap: wrap;
-    gap: var(--spacing-md);
-}
-
-.presence-display__time {
-    display: flex;
-    flex-direction: column;
-}
-
-.presence-display__label {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-xs);
-}
-
-.presence-display__value {
-    font-size: var(--font-size-2xl);
-    font-weight: 700;
-    color: var(--color-primary);
-}
-
-.presence-display__progress {
-    text-align: right;
-}
-
-.presence-display__percentage {
-    font-size: var(--font-size-2xl);
-    font-weight: 700;
-    color: var(--color-text-secondary);
-}
-
-.presence-display__percentage--warning {
-    color: var(--color-warning);
-}
-
-.presence-display__percentage--complete {
-    color: var(--color-success);
-}
-
-.presence-display__target {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    display: block;
-    margin-top: var(--spacing-xs);
-}
-
-.presence-display__remaining {
-    font-size: var(--font-size-lg);
-    color: var(--color-text-secondary);
-    text-align: center;
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
 }
 
 /* Clock In Component - BEM */
@@ -1445,15 +1467,6 @@ input[type="radio"] {
         display: flex;
         flex-direction: column;
         gap: var(--spacing-lg);
-    }
-
-    .presence-display__main {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .presence-display__progress {
-        text-align: left;
     }
 
     .clock-in__buttons {
