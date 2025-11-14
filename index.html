@@ -15,133 +15,139 @@
 
     <!-- Contenu principal -->
     <main class="main">
-        <!-- Affichage du statut de la journée -->
-        <section class="status-section">
-            <div id="day-status" class="day-status day-status--not-started">
-                Pas encore commencé
-            </div>
-        </section>
-
-        <!-- Affichage du temps de présence -->
-        <section class="presence-display">
-            <div class="presence-display__main">
-                <div class="presence-display__time">
-                    <span class="presence-display__label">Temps de présence</span>
-                    <span id="presence-time" class="presence-display__value">0h 00m</span>
+        <!-- Colonne gauche - Suivi de présence -->
+        <div class="main__left">
+            <!-- Affichage du statut de la journée -->
+            <section class="status-section">
+                <div id="day-status" class="day-status day-status--not-started">
+                    Pas encore commencé
                 </div>
-                <div class="presence-display__progress">
-                    <span id="presence-percentage" class="presence-display__percentage">0%</span>
-                    <span class="presence-display__target">/ 8h objectif</span>
+            </section>
+
+            <!-- Affichage du temps de présence -->
+            <section class="presence-display">
+                <div class="presence-display__main">
+                    <div class="presence-display__time">
+                        <span class="presence-display__label">Temps de présence</span>
+                        <span id="presence-time" class="presence-display__value">0h 00m</span>
+                    </div>
+                    <div class="presence-display__progress">
+                        <span id="presence-percentage" class="presence-display__percentage">0%</span>
+                        <span class="presence-display__target">/ 8h objectif</span>
+                    </div>
                 </div>
-            </div>
-            <div id="remaining-time" class="presence-display__remaining">
-                Reste: 8h 00m
-            </div>
-        </section>
-
-        <!-- Boutons de pointage -->
-        <section class="clock-in">
-            <h2 class="clock-in__title">Pointages</h2>
-            <div class="clock-in__buttons">
-                <button
-                    id="clock-in-btn"
-                    class="clock-in__button clock-in__button--active"
-                    disabled
-                >
-                    <span class="clock-in__button-icon">🟢</span>
-                    <span class="clock-in__button-text">Arrivée</span>
-                </button>
-
-                <button
-                    id="lunch-start-btn"
-                    class="clock-in__button"
-                    disabled
-                >
-                    <span class="clock-in__button-icon">🍽️</span>
-                    <span class="clock-in__button-text">Début pause</span>
-                </button>
-
-                <button
-                    id="lunch-end-btn"
-                    class="clock-in__button"
-                    disabled
-                >
-                    <span class="clock-in__button-icon">✅</span>
-                    <span class="clock-in__button-text">Fin pause</span>
-                </button>
-
-                <button
-                    id="clock-out-btn"
-                    class="clock-in__button"
-                    disabled
-                >
-                    <span class="clock-in__button-icon">🔴</span>
-                    <span class="clock-in__button-text">Départ</span>
-                </button>
-            </div>
-        </section>
-
-        <!-- Historique des pointages du jour -->
-        <section class="entries-section">
-            <h2 class="entries-section__title">Pointages d'aujourd'hui</h2>
-            <ul id="entries-list" class="entries-list">
-                <li class="entries-list__empty">Aucun pointage pour aujourd'hui</li>
-            </ul>
-        </section>
-
-        <!-- Affichage du chronomètre -->
-        <section class="timer-display timer-display--stopped" id="timer-display">
-            <div class="timer-display__header">
-                <h2 class="timer-display__title">Chronomètre</h2>
-                <button id="stop-timer-btn" class="timer-display__stop-btn">
-                    ⏹️ Arrêter
-                </button>
-            </div>
-            <div class="timer-display__content">
-                <div id="timer-project-name" class="timer-display__project">
-                    Aucun projet en cours
+                <div id="remaining-time" class="presence-display__remaining">
+                    Reste: 8h 00m
                 </div>
-                <div id="timer-duration" class="timer-display__duration">
-                    0h 00m
+            </section>
+
+            <!-- Boutons de pointage -->
+            <section class="clock-in">
+                <h2 class="clock-in__title">Pointages</h2>
+                <div class="clock-in__buttons">
+                    <button
+                        id="clock-in-btn"
+                        class="clock-in__button clock-in__button--active"
+                        disabled
+                    >
+                        <span class="clock-in__button-icon">🟢</span>
+                        <span class="clock-in__button-text">Arrivée</span>
+                    </button>
+
+                    <button
+                        id="lunch-start-btn"
+                        class="clock-in__button"
+                        disabled
+                    >
+                        <span class="clock-in__button-icon">🍽️</span>
+                        <span class="clock-in__button-text">Début pause</span>
+                    </button>
+
+                    <button
+                        id="lunch-end-btn"
+                        class="clock-in__button"
+                        disabled
+                    >
+                        <span class="clock-in__button-icon">✅</span>
+                        <span class="clock-in__button-text">Fin pause</span>
+                    </button>
+
+                    <button
+                        id="clock-out-btn"
+                        class="clock-in__button"
+                        disabled
+                    >
+                        <span class="clock-in__button-icon">🔴</span>
+                        <span class="clock-in__button-text">Départ</span>
+                    </button>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Gestion des projets -->
-        <section class="projects-section">
-            <h2 class="projects-section__title">Projets</h2>
+            <!-- Historique des pointages du jour -->
+            <section class="entries-section">
+                <h2 class="entries-section__title">Pointages d'aujourd'hui</h2>
+                <ul id="entries-list" class="entries-list">
+                    <li class="entries-list__empty">Aucun pointage pour aujourd'hui</li>
+                </ul>
+            </section>
+        </div>
 
-            <!-- Formulaire d'ajout de projet -->
-            <div class="projects-section__add">
-                <input
-                    type="text"
-                    id="new-project-name"
-                    class="projects-section__input"
-                    placeholder="Nom du nouveau projet"
-                    maxlength="100"
-                />
-                <button id="add-project-btn" class="projects-section__btn">
-                    Ajouter
-                </button>
-            </div>
+        <!-- Colonne droite - Gestion de projets -->
+        <div class="main__right">
+            <!-- Affichage du chronomètre -->
+            <section class="timer-display timer-display--stopped" id="timer-display">
+                <div class="timer-display__header">
+                    <h2 class="timer-display__title">Chronomètre</h2>
+                    <button id="stop-timer-btn" class="timer-display__stop-btn">
+                        ⏹️ Arrêter
+                    </button>
+                </div>
+                <div class="timer-display__content">
+                    <div id="timer-project-name" class="timer-display__project">
+                        Aucun projet en cours
+                    </div>
+                    <div id="timer-duration" class="timer-display__duration">
+                        0h 00m
+                    </div>
+                </div>
+            </section>
 
-            <!-- Tableau des projets -->
-            <table class="projects-table">
-                <tbody id="projects-list">
-                    <tr class="projects-table__empty">
-                        <td colspan="2">Aucun projet</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
+            <!-- Gestion des projets -->
+            <section class="projects-section">
+                <h2 class="projects-section__title">Projets</h2>
 
-        <!-- Statistiques des projets -->
-        <section class="project-stats-section">
-            <h2 class="project-stats-section__title">Temps passé par projet aujourd'hui</h2>
-            <div id="project-stats" class="project-stats">
-                <p class="project-stats__empty">Aucune session de travail pour aujourd'hui</p>
-            </div>
-        </section>
+                <!-- Formulaire d'ajout de projet -->
+                <div class="projects-section__add">
+                    <input
+                        type="text"
+                        id="new-project-name"
+                        class="projects-section__input"
+                        placeholder="Nom du nouveau projet"
+                        maxlength="100"
+                    />
+                    <button id="add-project-btn" class="projects-section__btn">
+                        Ajouter
+                    </button>
+                </div>
+
+                <!-- Tableau des projets -->
+                <table class="projects-table">
+                    <tbody id="projects-list">
+                        <tr class="projects-table__empty">
+                            <td colspan="2">Aucun projet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Statistiques des projets -->
+            <section class="project-stats-section">
+                <h2 class="project-stats-section__title">Temps passé par projet aujourd'hui</h2>
+                <div id="project-stats" class="project-stats">
+                    <p class="project-stats__empty">Aucune session de travail pour aujourd'hui</p>
+                </div>
+            </section>
+        </div>
     </main>
 
     <!-- Footer -->

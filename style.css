@@ -79,14 +79,42 @@ body {
 
 /* Main Content */
 .main {
-    max-width: 800px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: var(--spacing-xl);
 }
 
+/* Layout en grille pour écrans larges */
+@media (min-width: 1024px) {
+    .main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xl);
+        align-items: start;
+    }
+
+    /* Colonne gauche - Suivi de présence */
+    .main__left {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xl);
+    }
+
+    /* Colonne droite - Gestion de projets */
+    .main__right {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xl);
+        position: sticky;
+        top: calc(var(--header-height, 100px) + var(--spacing-md));
+        max-height: calc(100vh - var(--header-height, 100px) - var(--spacing-xl) * 2);
+        overflow-y: auto;
+    }
+}
+
 /* Status Section */
 .status-section {
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: 0;
 }
 
 .day-status {
@@ -133,8 +161,8 @@ body {
 .presence-display {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: 0;
     box-shadow: var(--shadow-md);
 }
 
@@ -201,16 +229,16 @@ body {
 .clock-in {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: 0;
     box-shadow: var(--shadow-md);
 }
 
 .clock-in__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--color-text);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
 }
 
 .clock-in__buttons {
@@ -269,16 +297,16 @@ body {
 .entries-section {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: 0;
     box-shadow: var(--shadow-md);
 }
 
 .entries-section__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--color-text);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
 }
 
 .entries-list {
@@ -368,16 +396,16 @@ body {
 .projects-section {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: 0;
     box-shadow: var(--shadow-md);
 }
 
 .projects-section__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--color-text);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
 }
 
 .projects-section__add {
@@ -535,8 +563,8 @@ body {
 .timer-display {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: 0;
     box-shadow: var(--shadow-md);
     border: 2px solid var(--color-border);
 }
@@ -683,22 +711,77 @@ body {
 .project-stats-section {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: 0;
     box-shadow: var(--shadow-md);
 }
 
 .project-stats-section__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--color-text);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
 }
 
-/* Responsive Design */
-@media (max-width: 640px) {
+/* Optimisation de l'espacement dans les colonnes pour écrans larges */
+@media (min-width: 1024px) {
+    .main__left > *:not(:last-child),
+    .main__right > *:not(:last-child) {
+        margin-bottom: var(--spacing-md);
+    }
+
+    /* Ajustement de la hauteur du header pour le sticky positioning */
+    :root {
+        --header-height: 90px;
+    }
+
+    /* Optimalisation de la colonne droite avec scrollbar personnalisée */
+    .main__right {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-border) transparent;
+    }
+
+    .main__right::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .main__right::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .main__right::-webkit-scrollbar-thumb {
+        background-color: var(--color-border);
+        border-radius: var(--radius-sm);
+    }
+
+    .main__right::-webkit-scrollbar-thumb:hover {
+        background-color: var(--color-text-secondary);
+    }
+}
+
+/* Tablettes en mode paysage */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .main {
+        max-width: 900px;
+        padding: var(--spacing-lg);
+    }
+
+    .clock-in__buttons {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Tablettes en mode portrait */
+@media (max-width: 767px) {
     .main {
         padding: var(--spacing-md);
+    }
+
+    .main__left,
+    .main__right {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-lg);
     }
 
     .presence-display__main {
@@ -722,6 +805,21 @@ body {
     .projects-section__add {
         flex-direction: column;
     }
+}
+
+/* Mobiles */
+@media (max-width: 640px) {
+    .main {
+        padding: var(--spacing-sm);
+    }
+
+    .header {
+        padding: var(--spacing-md);
+    }
+
+    .header__title {
+        font-size: var(--font-size-lg);
+    }
 
     .projects-table__cell--name {
         width: 50%;
@@ -739,5 +837,15 @@ body {
         padding: var(--spacing-xs) var(--spacing-sm);
         font-size: 1rem;
         min-width: 35px;
+    }
+
+    /* Réduire les paddings sur mobile */
+    .clock-in,
+    .entries-section,
+    .presence-display,
+    .projects-section,
+    .timer-display,
+    .project-stats-section {
+        padding: var(--spacing-md);
     }
 }
