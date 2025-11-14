@@ -150,6 +150,117 @@
         </div>
     </main>
 
+    <!-- Section Rapports et Statistiques (Phase 3) -->
+    <section class="reports-section">
+        <div class="reports-section__container">
+            <!-- En-tête avec sélection de période -->
+            <div class="reports-section__header">
+                <h2 class="reports-section__title">Rapports et Statistiques</h2>
+
+                <div class="reports-section__controls">
+                    <!-- Sélecteur de type de période -->
+                    <div class="period-selector">
+                        <button
+                            id="period-week-btn"
+                            class="period-selector__btn period-selector__btn--active"
+                            data-period="week"
+                        >
+                            Semaine
+                        </button>
+                        <button
+                            id="period-month-btn"
+                            class="period-selector__btn"
+                            data-period="month"
+                        >
+                            Mois
+                        </button>
+                    </div>
+
+                    <!-- Navigation de période -->
+                    <div class="period-nav">
+                        <button id="period-prev-btn" class="period-nav__btn" title="Période précédente">
+                            ◀
+                        </button>
+                        <span id="period-label" class="period-nav__label">
+                            13-19 Nov 2025
+                        </span>
+                        <button id="period-next-btn" class="period-nav__btn" title="Période suivante">
+                            ▶
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiques globales -->
+            <div class="report-summary">
+                <div class="report-summary__card">
+                    <div class="report-summary__label">Temps de présence total</div>
+                    <div id="report-total-presence" class="report-summary__value">0h 00m</div>
+                </div>
+                <div class="report-summary__card">
+                    <div class="report-summary__label">Temps projets total</div>
+                    <div id="report-total-project" class="report-summary__value">0h 00m</div>
+                </div>
+                <div class="report-summary__card">
+                    <div class="report-summary__label">Jours travaillés</div>
+                    <div id="report-worked-days" class="report-summary__value">0</div>
+                </div>
+                <div class="report-summary__card report-summary__card--warning">
+                    <div class="report-summary__label">Jours incomplets</div>
+                    <div id="report-incomplete-days" class="report-summary__value">0</div>
+                </div>
+            </div>
+
+            <!-- Deux colonnes: Projets et Jours incomplets -->
+            <div class="report-content">
+                <!-- Colonne gauche: Temps par projet -->
+                <div class="report-content__left">
+                    <div class="report-projects">
+                        <h3 class="report-projects__title">Temps par projet</h3>
+                        <div id="report-projects-list" class="report-projects__list">
+                            <p class="report-projects__empty">Aucune donnée pour cette période</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonne droite: Jours incomplets et export -->
+                <div class="report-content__right">
+                    <!-- Jours incomplets -->
+                    <div class="incomplete-days">
+                        <h3 class="incomplete-days__title">Jours incomplets (&lt;8h)</h3>
+                        <div id="incomplete-days-list" class="incomplete-days__list">
+                            <p class="incomplete-days__empty">Aucun jour incomplet</p>
+                        </div>
+                    </div>
+
+                    <!-- Export -->
+                    <div class="report-export">
+                        <h3 class="report-export__title">Exporter les données</h3>
+                        <div class="report-export__buttons">
+                            <button id="export-report-csv-btn" class="report-export__btn">
+                                📊 Rapport CSV
+                            </button>
+                            <button id="export-report-json-btn" class="report-export__btn">
+                                📄 Rapport JSON
+                            </button>
+                            <button id="export-all-data-btn" class="report-export__btn">
+                                💾 Tout exporter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graphique quotidien -->
+            <div class="daily-chart">
+                <h3 class="daily-chart__title">Temps de présence quotidien</h3>
+                <div id="daily-chart-container" class="daily-chart__container">
+                    <p class="daily-chart__empty">Aucune donnée à afficher</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
         <p class="footer__text">Claude Time Tracker v2.0.0</p>
