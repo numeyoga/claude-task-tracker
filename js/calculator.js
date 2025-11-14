@@ -196,4 +196,88 @@ export class TimeCalculator {
         const target = WORK_DAY_HOURS * MILLISECONDS_PER_HOUR;
         return Math.round((duration / target) * 100);
     }
+
+    // ======================
+    // Méthodes pour les projets
+    // ======================
+
+    /**
+     * Calcule le temps total passé sur un projet pour une liste de sessions
+     * @param {ProjectSession[]} sessions - Liste des sessions du projet
+     * @param {boolean} includeRunning - Inclure la session en cours dans le calcul
+     * @returns {number} Durée totale en millisecondes
+     */
+    calculateProjectTime(sessions, includeRunning = true) {
+        if (!sessions || sessions.length === 0) {
+            return 0;
+        }
+
+        return sessions.reduce((total, session) => {
+            if (!includeRunning && session.isRunning()) {
+                return total;
+            }
+            return total + session.getDuration();
+        }, 0);
+    }
+
+    /**
+     * Calcule le temps passé par projet pour une journée
+     * @param {ProjectSession[]} sessions - Liste des sessions de la journée
+     * @param {Project[]} projects - Liste des projets
+     * @returns {Object[]} Liste d'objets {projectId, projectName, duration, percentage}
+     */
+    calculateProjectStats(sessions, projects) {
+        if (!sessions || sessions.length === 0) {
+            return [];
+        }
+
+        // Grouper les sessions par projet
+        const sessionsByProject = {};
+
+        sessions.forEach(session => {
+            if (!sessionsByProject[session.projectId]) {
+                sessionsByProject[session.projectId] = [];
+            }
+            sessionsByProject[session.projectId].push(session);
+        });
+
+        // Calculer le temps total de toutes les sessions
+        const totalTime = sessions.reduce((sum, session) => sum + session.getDuration(), 0);
+
+        // Créer les statistiques par projet
+        const stats = [];
+
+        Object.keys(sessionsByProject).forEach(projectId => {
+            const project = projects.find(p => p.id === projectId);
+            const projectSessions = sessionsByProject[projectId];
+            const duration = this.calculateProjectTime(projectSessions);
+            const percentage = totalTime > 0 ? Math.round((duration / totalTime) * 100) : 0;
+
+            stats.push({
+                projectId,
+                projectName: project ? project.name : 'Projet inconnu',
+                duration,
+                percentage,
+                isRunning: projectSessions.some(s => s.isRunning())
+            });
+        });
+
+        // Trier par durée décroissante
+        stats.sort((a, b) => b.duration - a.duration);
+
+        return stats;
+    }
+
+    /**
+     * Calcule le temps total de toutes les sessions
+     * @param {ProjectSession[]} sessions - Liste des sessions
+     * @returns {number} Durée totale en millisecondes
+     */
+    calculateTotalProjectTime(sessions) {
+        if (!sessions || sessions.length === 0) {
+            return 0;
+        }
+
+        return sessions.reduce((total, session) => total + session.getDuration(), 0);
+    }
 }

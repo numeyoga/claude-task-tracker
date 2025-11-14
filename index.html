@@ -89,6 +89,24 @@
             </ul>
         </section>
 
+        <!-- Affichage du chronomètre -->
+        <section class="timer-display timer-display--stopped" id="timer-display">
+            <div class="timer-display__header">
+                <h2 class="timer-display__title">Chronomètre</h2>
+                <button id="stop-timer-btn" class="timer-display__stop-btn">
+                    ⏹️ Arrêter
+                </button>
+            </div>
+            <div class="timer-display__content">
+                <div id="timer-project-name" class="timer-display__project">
+                    Aucun projet en cours
+                </div>
+                <div id="timer-duration" class="timer-display__duration">
+                    0h 00m
+                </div>
+            </div>
+        </section>
+
         <!-- Gestion des projets -->
         <section class="projects-section">
             <h2 class="projects-section__title">Projets</h2>
@@ -115,6 +133,14 @@
                     </tr>
                 </tbody>
             </table>
+        </section>
+
+        <!-- Statistiques des projets -->
+        <section class="project-stats-section">
+            <h2 class="project-stats-section__title">Temps passé par projet aujourd'hui</h2>
+            <div id="project-stats" class="project-stats">
+                <p class="project-stats__empty">Aucune session de travail pour aujourd'hui</p>
+            </div>
         </section>
     </main>
 

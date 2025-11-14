@@ -18,6 +18,7 @@ export class ProjectsUI {
         this.onUpdateName = null;
         this.onUpdateTime = null;
         this.onDeleteProject = null;
+        this.onStartProject = null;
     }
 
     /**
@@ -138,6 +139,16 @@ export class ProjectsUI {
             class: 'projects-table__actions'
         });
 
+        // Bouton démarrer le chronomètre
+        const startBtn = createElement('button', {
+            class: 'projects-table__btn projects-table__btn--start',
+            title: 'Démarrer le chronomètre',
+            dataset: { action: 'start', projectId: project.id }
+        }, '▶️');
+        startBtn.addEventListener('click', () => {
+            this.#handleStart(project);
+        });
+
         // Bouton modifier le nom
         const editNameBtn = createElement('button', {
             class: 'projects-table__btn projects-table__btn--edit',
@@ -165,6 +176,7 @@ export class ProjectsUI {
             this.#handleDelete(project);
         });
 
+        actionsContainer.appendChild(startBtn);
         actionsContainer.appendChild(editNameBtn);
         actionsContainer.appendChild(editTimeBtn);
         actionsContainer.appendChild(deleteBtn);
@@ -174,6 +186,17 @@ export class ProjectsUI {
         row.appendChild(actionsCell);
 
         return row;
+    }
+
+    /**
+     * Gère le démarrage du chronomètre pour un projet
+     * @param {Project} project - Projet à démarrer
+     * @private
+     */
+    #handleStart(project) {
+        if (this.onStartProject) {
+            this.onStartProject(project.id);
+        }
     }
 
     /**
