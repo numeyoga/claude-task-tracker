@@ -111,26 +111,16 @@ export class ProjectsUI {
             dataset: { projectId: project.id }
         });
 
-        // Colonne nom + temps
+        // Colonne nom uniquement
         const nameCell = createElement('td', {
             class: 'projects-table__cell projects-table__cell--name'
-        });
-
-        const nameContainer = createElement('div', {
-            class: 'projects-table__name-container'
         });
 
         const nameDisplay = createElement('div', {
             class: 'projects-table__name'
         }, project.name);
 
-        const timeDisplay = createElement('div', {
-            class: 'projects-table__time'
-        }, formatDuration(project.timeSpent));
-
-        nameContainer.appendChild(nameDisplay);
-        nameContainer.appendChild(timeDisplay);
-        nameCell.appendChild(nameContainer);
+        nameCell.appendChild(nameDisplay);
 
         // Colonne actions
         const actionsCell = createElement('td', {
@@ -140,6 +130,11 @@ export class ProjectsUI {
         const actionsContainer = createElement('div', {
             class: 'projects-table__actions'
         });
+
+        // Affichage du temps passé
+        const timeDisplay = createElement('div', {
+            class: 'projects-table__time'
+        }, formatDuration(project.timeSpent));
 
         // Bouton démarrer le chronomètre
         const startBtn = createElement('button', {
@@ -187,6 +182,7 @@ export class ProjectsUI {
             this.#handleDelete(project);
         });
 
+        actionsContainer.appendChild(timeDisplay);
         actionsContainer.appendChild(startBtn);
         actionsContainer.appendChild(editNameBtn);
         actionsContainer.appendChild(editTimeBtn);
