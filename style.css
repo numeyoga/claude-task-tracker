@@ -338,6 +338,42 @@ body {
     font-size: var(--font-size-base);
 }
 
+.entries-list__actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-left: auto;
+}
+
+.entries-list__btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.entries-list__btn:hover {
+    background-color: var(--color-border);
+    transform: scale(1.1);
+}
+
+.entries-list__btn:active {
+    transform: scale(0.95);
+}
+
+.entries-list__btn--edit:hover {
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+.entries-list__btn--delete:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
 /* Responsive pour la barre de présence */
 @media (max-width: 767px) {
     .daily-presence-bar__container {

@@ -68,6 +68,17 @@ export class TimeEntry {
     }
 
     /**
+     * Met à jour le timestamp du pointage
+     * @param {Date} newTimestamp - Nouveau timestamp
+     * @throws {Error} Si le timestamp n'est pas valide
+     */
+    updateTimestamp(newTimestamp) {
+        this.#validateTimestamp(newTimestamp);
+        this.timestamp = newTimestamp;
+        this.date = formatDate(newTimestamp);
+    }
+
+    /**
      * Convertit l'entrée en objet sérialisable pour IndexedDB
      * @returns {Object} Objet sérialisé
      */

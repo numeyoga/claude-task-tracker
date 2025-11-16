@@ -21,6 +21,10 @@ export class TimeTrackerUI {
             entriesList: null,
             dayStatus: null
         };
+
+        // Callbacks
+        this.onEditEntry = null;
+        this.onDeleteEntry = null;
     }
 
     /**
@@ -214,9 +218,40 @@ export class TimeTrackerUI {
             class: 'entries-list__time'
         }, time);
 
+        // Boutons d'action
+        const actionsContainer = createElement('span', {
+            class: 'entries-list__actions'
+        });
+
+        // Bouton modifier
+        const editBtn = createElement('button', {
+            class: 'entries-list__btn entries-list__btn--edit',
+            title: 'Modifier l\'heure'
+        }, '✏️');
+        editBtn.addEventListener('click', () => {
+            if (this.onEditEntry) {
+                this.onEditEntry(entry);
+            }
+        });
+
+        // Bouton supprimer
+        const deleteBtn = createElement('button', {
+            class: 'entries-list__btn entries-list__btn--delete',
+            title: 'Supprimer'
+        }, '🗑️');
+        deleteBtn.addEventListener('click', () => {
+            if (this.onDeleteEntry) {
+                this.onDeleteEntry(entry);
+            }
+        });
+
+        actionsContainer.appendChild(editBtn);
+        actionsContainer.appendChild(deleteBtn);
+
         listItem.appendChild(iconSpan);
         listItem.appendChild(labelSpan);
         listItem.appendChild(timeSpan);
+        listItem.appendChild(actionsContainer);
 
         return listItem;
     }
