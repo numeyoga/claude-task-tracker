@@ -64,14 +64,14 @@ export class TimeTrackerUI {
         Object.values(buttons).forEach(btn => {
             if (btn) {
                 btn.disabled = true;
-                btn.classList.remove('clock-in__button--active');
+                btn.classList.remove('presence-btn--active');
             }
         });
 
         // Activer le bouton approprié
         if (nextExpectedEntry && buttons[nextExpectedEntry]) {
             buttons[nextExpectedEntry].disabled = false;
-            buttons[nextExpectedEntry].classList.add('clock-in__button--active');
+            buttons[nextExpectedEntry].classList.add('presence-btn--active');
         }
     }
 
