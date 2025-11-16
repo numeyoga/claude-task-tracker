@@ -31,9 +31,9 @@ export class ProjectTimerUI {
         this.elements.statsContainer = document.getElementById('project-stats');
 
         // Bouton pour arrêter le timer
-        const stopBtn = document.getElementById('stop-timer-btn');
-        if (stopBtn) {
-            stopBtn.addEventListener('click', () => {
+        this.elements.stopTimerBtn = document.getElementById('stop-timer-btn');
+        if (this.elements.stopTimerBtn) {
+            this.elements.stopTimerBtn.addEventListener('click', () => {
                 if (this.onStopTimer) {
                     this.onStopTimer();
                 }
@@ -73,6 +73,11 @@ export class ProjectTimerUI {
             if (this.elements.timerDuration) {
                 this.elements.timerDuration.textContent = formatDuration(duration);
             }
+
+            // Activer le bouton d'arrêt
+            if (this.elements.stopTimerBtn) {
+                this.elements.stopTimerBtn.disabled = false;
+            }
         } else {
             // Arrêter le timer
             this.elements.timerDisplay.classList.remove('timer-display-compact--running');
@@ -84,6 +89,11 @@ export class ProjectTimerUI {
 
             if (this.elements.timerDuration) {
                 this.elements.timerDuration.textContent = '0h 00m';
+            }
+
+            // Désactiver le bouton d'arrêt
+            if (this.elements.stopTimerBtn) {
+                this.elements.stopTimerBtn.disabled = true;
             }
         }
     }

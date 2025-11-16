@@ -484,6 +484,18 @@ body {
     transform: translateY(0);
 }
 
+.timer-compact__stop-btn:disabled {
+    background-color: var(--color-border);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.timer-compact__stop-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 /* Footer */
 .footer {
     background-color: var(--color-surface);
