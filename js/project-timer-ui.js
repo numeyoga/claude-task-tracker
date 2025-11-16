@@ -63,8 +63,8 @@ export class ProjectTimerUI {
 
         if (projectId) {
             // Afficher le timer en cours
-            this.elements.timerDisplay.classList.add('timer-display--running');
-            this.elements.timerDisplay.classList.remove('timer-display--stopped');
+            this.elements.timerDisplay.classList.add('timer-display-compact--running');
+            this.elements.timerDisplay.classList.remove('timer-display-compact--stopped');
 
             if (this.elements.timerProjectName) {
                 this.elements.timerProjectName.textContent = projectName || 'Projet inconnu';
@@ -75,8 +75,8 @@ export class ProjectTimerUI {
             }
         } else {
             // Arrêter le timer
-            this.elements.timerDisplay.classList.remove('timer-display--running');
-            this.elements.timerDisplay.classList.add('timer-display--stopped');
+            this.elements.timerDisplay.classList.remove('timer-display-compact--running');
+            this.elements.timerDisplay.classList.add('timer-display-compact--stopped');
 
             if (this.elements.timerProjectName) {
                 this.elements.timerProjectName.textContent = 'Aucun projet en cours';
