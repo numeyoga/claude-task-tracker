@@ -192,6 +192,78 @@ class App {
         }
     }
 
+    /**
+     * Modifie l'heure d'un pointage existant
+     * @param {TimeEntry} entry - Pointage à modifier
+     */
+    async editEntry(entry) {
+        try {
+            // Demander la nouvelle heure
+            const currentTime = entry.timestamp.toTimeString().substring(0, 5); // HH:MM
+            const newTimeStr = prompt(
+                'Modifier l\'heure du pointage (format HH:MM):',
+                currentTime
+            );
+
+            if (!newTimeStr) return;
+
+            // Parser la nouvelle heure
+            const [hours, minutes] = newTimeStr.split(':').map(s => parseInt(s.trim()));
+
+            if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                this.ui.showError('Format d\'heure invalide. Utilisez HH:MM');
+                return;
+            }
+
+            // Créer un nouveau timestamp avec la nouvelle heure
+            const newTimestamp = new Date(entry.timestamp);
+            newTimestamp.setHours(hours, minutes, 0, 0);
+
+            // Mettre à jour le pointage
+            entry.updateTimestamp(newTimestamp);
+
+            // Sauvegarder dans IndexedDB
+            await this.storage.saveEntry(entry);
+
+            // Recharger les données
+            await this.loadTodayData();
+
+            this.ui.showSuccess('Pointage modifié');
+
+            console.log('✅ Pointage modifié:', entry.id);
+        } catch (error) {
+            console.error('❌ Erreur lors de la modification:', error);
+            this.ui.showError(error.message || 'Erreur lors de la modification du pointage');
+        }
+    }
+
+    /**
+     * Supprime un pointage
+     * @param {TimeEntry} entry - Pointage à supprimer
+     */
+    async deleteEntry(entry) {
+        try {
+            const confirm = window.confirm('Êtes-vous sûr de vouloir supprimer ce pointage ?');
+            if (!confirm) return;
+
+            // Supprimer de IndexedDB
+            await this.storage.deleteEntry(entry.id);
+
+            // Retirer de la liste locale
+            this.todayEntries = this.todayEntries.filter(e => e.id !== entry.id);
+
+            // Mettre à jour l'UI
+            this.updateUI();
+
+            this.ui.showSuccess('Pointage supprimé');
+
+            console.log('✅ Pointage supprimé:', entry.id);
+        } catch (error) {
+            console.error('❌ Erreur lors de la suppression:', error);
+            this.ui.showError('Erreur lors de la suppression du pointage');
+        }
+    }
+
     // ======================
     // Mise à jour de l'interface
     // ======================
@@ -248,7 +320,7 @@ class App {
      * Met à jour l'interface utilisateur des projets
      */
     updateProjectsUI() {
-        this.projectsUI.renderProjects(this.projects);
+        this.projectsUI.renderProjects(this.projects, this.todaySessions);
     }
 
     /**
@@ -420,6 +492,7 @@ class App {
 
             // Recharger les sessions et mettre à jour l'UI
             await this.loadTodaySessions();
+            this.updateProjectsUI();
 
             console.log('✅ Chronomètre démarré pour le projet:', projectId);
         } catch (error) {
@@ -438,6 +511,7 @@ class App {
             if (session) {
                 // Recharger les sessions
                 await this.loadTodaySessions();
+                this.updateProjectsUI();
 
                 this.timerUI.showSuccess('Chronomètre arrêté');
 
@@ -499,6 +573,16 @@ class App {
         this.ui.onButtonClick(ENTRY_TYPES.CLOCK_OUT, () => {
             this.recordEntry(ENTRY_TYPES.CLOCK_OUT);
         });
+
+        // Modification d'un pointage
+        this.ui.onEditEntry = (entry) => {
+            this.editEntry(entry);
+        };
+
+        // Suppression d'un pointage
+        this.ui.onDeleteEntry = (entry) => {
+            this.deleteEntry(entry);
+        };
 
         // Toggle de l'historique des pointages
         const toggleEntriesBtn = document.getElementById('toggle-entries-btn');
@@ -564,6 +648,9 @@ class App {
             // Mettre à jour les statistiques aussi (pour la session en cours)
             const stats = this.calculator.calculateProjectStats(this.todaySessions, this.projects);
             this.timerUI.renderStats(stats);
+
+            // Mettre à jour l'affichage du temps quotidien dans la liste des projets
+            this.updateProjectsUI();
         };
 
         // Démarrage du timer

@@ -73,8 +73,9 @@ export class ProjectsUI {
     /**
      * Affiche la liste des projets
      * @param {Project[]} projects - Liste des projets
+     * @param {ProjectSession[]} todaySessions - Sessions du jour
      */
-    renderProjects(projects) {
+    renderProjects(projects, todaySessions = []) {
         if (!this.elements.projectsList) return;
 
         // Vider la liste actuelle
@@ -94,7 +95,7 @@ export class ProjectsUI {
 
         // Créer les lignes du tableau
         projects.forEach(project => {
-            const row = this.#createProjectRow(project);
+            const row = this.#createProjectRow(project, todaySessions);
             this.elements.projectsList.appendChild(row);
         });
     }
@@ -102,10 +103,11 @@ export class ProjectsUI {
     /**
      * Crée une ligne du tableau pour un projet
      * @param {Project} project - Projet à afficher
+     * @param {ProjectSession[]} todaySessions - Sessions du jour
      * @returns {HTMLElement} Élément tr
      * @private
      */
-    #createProjectRow(project) {
+    #createProjectRow(project, todaySessions = []) {
         const row = createElement('tr', {
             class: 'projects-table__row',
             dataset: { projectId: project.id }
@@ -131,10 +133,13 @@ export class ProjectsUI {
             class: 'projects-table__actions'
         });
 
-        // Affichage du temps passé
+        // Calculer le temps passé aujourd'hui sur ce projet
+        const dailyTime = this.#calculateDailyTime(project.id, todaySessions);
+
+        // Affichage du temps passé aujourd'hui
         const timeDisplay = createElement('div', {
             class: 'projects-table__time'
-        }, formatDuration(project.timeSpent));
+        }, formatDuration(dailyTime));
 
         // Bouton démarrer le chronomètre
         const startBtn = createElement('button', {
@@ -288,6 +293,27 @@ export class ProjectsUI {
         });
 
         popover.show();
+    }
+
+    /**
+     * Calcule le temps passé aujourd'hui sur un projet
+     * @param {string} projectId - ID du projet
+     * @param {ProjectSession[]} todaySessions - Sessions du jour
+     * @returns {number} Temps en millisecondes
+     * @private
+     */
+    #calculateDailyTime(projectId, todaySessions) {
+        if (!todaySessions || todaySessions.length === 0) {
+            return 0;
+        }
+
+        // Filtrer les sessions du projet
+        const projectSessions = todaySessions.filter(session => session.projectId === projectId);
+
+        // Calculer le temps total
+        return projectSessions.reduce((total, session) => {
+            return total + session.getDuration();
+        }, 0);
     }
 
     /**
