@@ -248,7 +248,7 @@ class App {
      * Met à jour l'interface utilisateur des projets
      */
     updateProjectsUI() {
-        this.projectsUI.renderProjects(this.projects);
+        this.projectsUI.renderProjects(this.projects, this.todaySessions);
     }
 
     /**
@@ -420,6 +420,7 @@ class App {
 
             // Recharger les sessions et mettre à jour l'UI
             await this.loadTodaySessions();
+            this.updateProjectsUI();
 
             console.log('✅ Chronomètre démarré pour le projet:', projectId);
         } catch (error) {
@@ -438,6 +439,7 @@ class App {
             if (session) {
                 // Recharger les sessions
                 await this.loadTodaySessions();
+                this.updateProjectsUI();
 
                 this.timerUI.showSuccess('Chronomètre arrêté');
 
@@ -564,6 +566,9 @@ class App {
             // Mettre à jour les statistiques aussi (pour la session en cours)
             const stats = this.calculator.calculateProjectStats(this.todaySessions, this.projects);
             this.timerUI.renderStats(stats);
+
+            // Mettre à jour l'affichage du temps quotidien dans la liste des projets
+            this.updateProjectsUI();
         };
 
         // Démarrage du timer
