@@ -1,6 +1,6 @@
 'use strict';
 
-import { formatDuration, createElement } from './utils.js';
+import { formatDuration, formatTime, createElement } from './utils.js';
 
 /**
  * Gestion de l'interface utilisateur pour le chronomètre de projet
@@ -12,12 +12,17 @@ export class ProjectTimerUI {
             timerProjectName: null,
             timerDuration: null,
             currentProjectIndicator: null,
-            statsContainer: null
+            statsContainer: null,
+            modal: null,
+            modalProjectName: null,
+            sessionsList: null,
+            closeModalBtn: null
         };
 
         // Callbacks
         this.onStartProject = null;
         this.onStopTimer = null;
+        this.onGetSessionsForProject = null; // Callback pour récupérer les sessions d'un projet
     }
 
     /**
@@ -39,6 +44,36 @@ export class ProjectTimerUI {
                 }
             });
         }
+
+        // Modal pour les détails des sessions
+        this.elements.modal = document.getElementById('session-details-modal');
+        this.elements.modalProjectName = document.getElementById('modal-project-name');
+        this.elements.sessionsList = document.getElementById('sessions-list');
+        this.elements.closeModalBtn = document.getElementById('close-modal-btn');
+
+        // Gestionnaire pour fermer le modal
+        if (this.elements.closeModalBtn) {
+            this.elements.closeModalBtn.addEventListener('click', () => {
+                this.closeModal();
+            });
+        }
+
+        // Fermer le modal en cliquant sur l'overlay
+        if (this.elements.modal) {
+            const overlay = this.elements.modal.querySelector('.modal__overlay');
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    this.closeModal();
+                });
+            }
+        }
+
+        // Fermer le modal avec la touche Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.elements.modal?.classList.contains('modal--visible')) {
+                this.closeModal();
+            }
+        });
 
         console.log('✅ ProjectTimerUI initialisée');
     }
@@ -152,7 +187,15 @@ export class ProjectTimerUI {
      */
     #createStatCard(stat) {
         const card = createElement('div', {
-            class: `project-stat-card ${stat.isRunning ? 'project-stat-card--running' : ''}`
+            class: `project-stat-card ${stat.isRunning ? 'project-stat-card--running' : ''}`,
+            dataset: {
+                projectId: stat.projectId
+            }
+        });
+
+        // Ajouter le gestionnaire de clic pour afficher les détails
+        card.addEventListener('click', () => {
+            this.showSessionDetails(stat.projectId, stat.projectName);
         });
 
         // En-tête avec nom et icône
@@ -242,5 +285,161 @@ export class ProjectTimerUI {
             toast.classList.remove('toast--visible');
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    /**
+     * Affiche le modal avec les détails des sessions d'un projet
+     * @param {string} projectId - ID du projet
+     * @param {string} projectName - Nom du projet
+     */
+    async showSessionDetails(projectId, projectName) {
+        if (!this.elements.modal || !this.onGetSessionsForProject) return;
+
+        // Mettre à jour le titre du modal
+        if (this.elements.modalProjectName) {
+            this.elements.modalProjectName.textContent = `Détails : ${projectName}`;
+        }
+
+        // Récupérer les sessions du projet
+        const sessions = await this.onGetSessionsForProject(projectId);
+
+        // Afficher les sessions
+        this.#renderSessions(sessions);
+
+        // Ouvrir le modal
+        this.openModal();
+    }
+
+    /**
+     * Affiche les sessions dans le modal
+     * @param {ProjectSession[]} sessions - Liste des sessions
+     * @private
+     */
+    #renderSessions(sessions) {
+        if (!this.elements.sessionsList) return;
+
+        // Vider le conteneur
+        this.elements.sessionsList.innerHTML = '';
+
+        if (!sessions || sessions.length === 0) {
+            const emptyMessage = createElement('p', {
+                class: 'sessions-list__empty'
+            }, 'Aucune session pour ce projet aujourd\'hui');
+
+            this.elements.sessionsList.appendChild(emptyMessage);
+            return;
+        }
+
+        // Créer les éléments de session
+        sessions.forEach((session, index) => {
+            const sessionItem = this.#createSessionItem(session, index + 1);
+            this.elements.sessionsList.appendChild(sessionItem);
+        });
+    }
+
+    /**
+     * Crée un élément de session
+     * @param {ProjectSession} session - Session à afficher
+     * @param {number} sessionNumber - Numéro de la session
+     * @returns {HTMLElement}
+     * @private
+     */
+    #createSessionItem(session, sessionNumber) {
+        const isRunning = !session.endTime;
+        const duration = session.getDuration();
+
+        const item = createElement('div', {
+            class: `session-item ${isRunning ? 'session-item--running' : ''}`
+        });
+
+        // En-tête avec durée et statut
+        const header = createElement('div', {
+            class: 'session-item__header'
+        });
+
+        const durationEl = createElement('div', {
+            class: 'session-item__duration'
+        }, formatDuration(duration));
+
+        const status = createElement('div', {
+            class: `session-item__status ${isRunning ? 'session-item__status--running' : ''}`
+        });
+
+        if (isRunning) {
+            const icon = createElement('span', {
+                class: 'session-item__status-icon'
+            }, '▶️');
+            const text = createElement('span', {}, 'En cours');
+            status.appendChild(icon);
+            status.appendChild(text);
+        } else {
+            status.textContent = 'Terminée';
+        }
+
+        header.appendChild(durationEl);
+        header.appendChild(status);
+
+        // Détails
+        const details = createElement('div', {
+            class: 'session-item__details'
+        });
+
+        // Numéro de session
+        const sessionLabel = createElement('div', {
+            class: 'session-item__label'
+        }, 'Session :');
+        const sessionValue = createElement('div', {
+            class: 'session-item__value'
+        }, `#${sessionNumber}`);
+
+        // Heure de début
+        const startLabel = createElement('div', {
+            class: 'session-item__label'
+        }, 'Début :');
+        const startValue = createElement('div', {
+            class: 'session-item__value'
+        }, formatTime(session.startTime));
+
+        // Heure de fin
+        const endLabel = createElement('div', {
+            class: 'session-item__label'
+        }, 'Fin :');
+        const endValue = createElement('div', {
+            class: 'session-item__value'
+        }, session.endTime ? formatTime(session.endTime) : 'En cours...');
+
+        // Assembler les détails
+        details.appendChild(sessionLabel);
+        details.appendChild(sessionValue);
+        details.appendChild(startLabel);
+        details.appendChild(startValue);
+        details.appendChild(endLabel);
+        details.appendChild(endValue);
+
+        // Assembler l'élément
+        item.appendChild(header);
+        item.appendChild(details);
+
+        return item;
+    }
+
+    /**
+     * Ouvre le modal
+     */
+    openModal() {
+        if (this.elements.modal) {
+            this.elements.modal.classList.add('modal--visible');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    /**
+     * Ferme le modal
+     */
+    closeModal() {
+        if (this.elements.modal) {
+            this.elements.modal.classList.remove('modal--visible');
+            document.body.style.overflow = '';
+        }
     }
 }

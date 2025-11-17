@@ -546,6 +546,15 @@ class App {
         this.timerUI.renderStats(stats);
     }
 
+    /**
+     * Récupère les sessions d'un projet pour aujourd'hui
+     * @param {string} projectId - ID du projet
+     * @returns {ProjectSession[]} - Sessions du projet
+     */
+    getSessionsForProject(projectId) {
+        return this.todaySessions.filter(session => session.projectId === projectId);
+    }
+
     // ======================
     // Écouteurs d'événements
     // ======================
@@ -666,6 +675,11 @@ class App {
         // Bouton d'arrêt du timer
         this.timerUI.onStopTimer = () => {
             this.stopTimer();
+        };
+
+        // Récupération des sessions d'un projet pour affichage des détails
+        this.timerUI.onGetSessionsForProject = async (projectId) => {
+            return this.getSessionsForProject(projectId);
         };
 
         console.log('✅ Écouteurs d\'événements du chronomètre configurés');
