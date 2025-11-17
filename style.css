@@ -1179,6 +1179,14 @@ body {
     flex-shrink: 0;
 }
 
+.weekly-table__color--project {
+    background-color: var(--color-primary);
+}
+
+.weekly-table__color--presence {
+    background-color: var(--color-text-secondary);
+}
+
 .weekly-table__total-project {
     color: var(--color-primary);
     font-weight: 600;
