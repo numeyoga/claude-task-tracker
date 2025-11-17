@@ -18,7 +18,6 @@ export class ProjectsUI {
         // Callbacks
         this.onAddProject = null;
         this.onUpdateName = null;
-        this.onUpdateTime = null;
         this.onDeleteProject = null;
         this.onStartProject = null;
         this.onAddRetroactiveTime = null;
@@ -175,15 +174,6 @@ export class ProjectsUI {
             this.#handleEditName(project);
         });
 
-        // Bouton modifier le temps
-        const editTimeBtn = createElement('button', {
-            class: 'projects-table__btn projects-table__btn--time',
-            title: 'Modifier le temps'
-        }, '⏱️');
-        editTimeBtn.addEventListener('click', () => {
-            this.#handleEditTime(project);
-        });
-
         // Bouton supprimer
         const deleteBtn = createElement('button', {
             class: 'projects-table__btn projects-table__btn--delete',
@@ -196,7 +186,6 @@ export class ProjectsUI {
         actionsContainer.appendChild(timeDisplay);
         actionsContainer.appendChild(startBtn);
         actionsContainer.appendChild(editNameBtn);
-        actionsContainer.appendChild(editTimeBtn);
         actionsContainer.appendChild(deleteBtn);
         actionsCell.appendChild(actionsContainer);
 
@@ -228,47 +217,6 @@ export class ProjectsUI {
             if (this.onUpdateName) {
                 this.onUpdateName(project.id, newName.trim());
             }
-        }
-    }
-
-    /**
-     * Gère la modification du temps d'un projet
-     * @param {Project} project - Projet à modifier
-     * @private
-     */
-    #handleEditTime(project) {
-        const currentHours = Math.floor(project.timeSpent / (1000 * 60 * 60));
-        const currentMinutes = Math.floor((project.timeSpent % (1000 * 60 * 60)) / (1000 * 60));
-
-        const input = prompt(
-            'Nouveau temps passé (format: HH:MM ou heures décimales):',
-            `${currentHours}:${currentMinutes.toString().padStart(2, '0')}`
-        );
-
-        if (!input) return;
-
-        // Parser le temps
-        let timeInMs = 0;
-
-        // Format HH:MM
-        if (input.includes(':')) {
-            const [hours, minutes] = input.split(':').map(s => parseInt(s.trim()));
-            if (!isNaN(hours) && !isNaN(minutes)) {
-                timeInMs = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
-            }
-        }
-        // Format décimal (heures)
-        else {
-            const hours = parseFloat(input);
-            if (!isNaN(hours)) {
-                timeInMs = hours * 60 * 60 * 1000;
-            }
-        }
-
-        if (timeInMs >= 0 && this.onUpdateTime) {
-            this.onUpdateTime(project.id, timeInMs);
-        } else {
-            alert('Format invalide. Utilisez HH:MM ou un nombre d\'heures.');
         }
     }
 
