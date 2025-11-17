@@ -400,34 +400,6 @@ class App {
     }
 
     /**
-     * Met à jour le temps d'un projet
-     * @param {string} projectId - ID du projet
-     * @param {number} timeSpent - Nouveau temps en millisecondes
-     */
-    async updateProjectTime(projectId, timeSpent) {
-        try {
-            const project = this.projects.find(p => p.id === projectId);
-            if (!project) {
-                throw new Error('Projet non trouvé');
-            }
-
-            project.updateTimeSpent(timeSpent);
-
-            await this.storage.saveProject(project);
-
-            // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
-
-            this.projectsUI.showSuccess(`Temps du projet modifié`);
-
-            console.log('✅ Temps du projet modifié:', projectId);
-        } catch (error) {
-            console.error('❌ Erreur lors de la modification du temps:', error);
-            this.projectsUI.showError('Erreur lors de la modification du temps');
-        }
-    }
-
-    /**
      * Supprime un projet
      * @param {string} projectId - ID du projet à supprimer
      */
@@ -660,11 +632,6 @@ class App {
         // Modification du nom
         this.projectsUI.onUpdateName = (projectId, newName) => {
             this.updateProjectName(projectId, newName);
-        };
-
-        // Modification du temps
-        this.projectsUI.onUpdateTime = (projectId, timeSpent) => {
-            this.updateProjectTime(projectId, timeSpent);
         };
 
         // Suppression
