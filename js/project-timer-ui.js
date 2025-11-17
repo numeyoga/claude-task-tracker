@@ -19,6 +19,13 @@ export class ProjectTimerUI {
             closeModalBtn: null
         };
 
+        // État du modal
+        this.modalState = {
+            isOpen: false,
+            projectId: null,
+            projectName: null
+        };
+
         // Callbacks
         this.onStartProject = null;
         this.onStopTimer = null;
@@ -295,6 +302,10 @@ export class ProjectTimerUI {
     async showSessionDetails(projectId, projectName) {
         if (!this.elements.modal || !this.onGetSessionsForProject) return;
 
+        // Sauvegarder les infos du modal
+        this.modalState.projectId = projectId;
+        this.modalState.projectName = projectName;
+
         // Mettre à jour le titre du modal
         if (this.elements.modalProjectName) {
             this.elements.modalProjectName.textContent = `Détails : ${projectName}`;
@@ -428,6 +439,7 @@ export class ProjectTimerUI {
      */
     openModal() {
         if (this.elements.modal) {
+            this.modalState.isOpen = true;
             this.elements.modal.classList.add('modal--visible');
             document.body.style.overflow = 'hidden';
         }
@@ -438,8 +450,51 @@ export class ProjectTimerUI {
      */
     closeModal() {
         if (this.elements.modal) {
+            this.modalState.isOpen = false;
+            this.modalState.projectId = null;
+            this.modalState.projectName = null;
             this.elements.modal.classList.remove('modal--visible');
             document.body.style.overflow = '';
         }
+    }
+
+    /**
+     * Vérifie si le modal est ouvert
+     * @returns {boolean}
+     */
+    isModalOpen() {
+        return this.modalState.isOpen;
+    }
+
+    /**
+     * Récupère les informations du modal ouvert
+     * @returns {{projectId: string|null, projectName: string|null}}
+     */
+    getOpenModalInfo() {
+        return {
+            projectId: this.modalState.projectId,
+            projectName: this.modalState.projectName
+        };
+    }
+
+    /**
+     * Rafraîchit le contenu du modal sans le fermer
+     * @param {string} projectId - ID du projet
+     * @param {string} projectName - Nom du projet
+     * @param {ProjectSession[]} sessions - Sessions du projet
+     */
+    refreshModalContent(projectId, projectName, sessions) {
+        if (!this.isModalOpen() || !this.elements.modal) return;
+
+        // Mettre à jour le titre si le nom a changé
+        if (this.elements.modalProjectName) {
+            this.elements.modalProjectName.textContent = `Détails : ${projectName}`;
+        }
+
+        // Rafraîchir la liste des sessions
+        this.#renderSessions(sessions);
+
+        // Mettre à jour l'état
+        this.modalState.projectName = projectName;
     }
 }
