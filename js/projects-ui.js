@@ -11,7 +11,8 @@ export class ProjectsUI {
         this.elements = {
             projectsList: null,
             addProjectBtn: null,
-            addProjectInput: null
+            addProjectInput: null,
+            addManualTimeBtn: null
         };
 
         // Callbacks
@@ -21,6 +22,9 @@ export class ProjectsUI {
         this.onDeleteProject = null;
         this.onStartProject = null;
         this.onAddRetroactiveTime = null;
+
+        // Liste des projets pour le bouton d'ajout manuel
+        this.projects = [];
     }
 
     /**
@@ -30,6 +34,7 @@ export class ProjectsUI {
         this.elements.projectsList = document.getElementById('projects-list');
         this.elements.addProjectBtn = document.getElementById('add-project-btn');
         this.elements.addProjectInput = document.getElementById('new-project-name');
+        this.elements.addManualTimeBtn = document.getElementById('add-manual-time-btn');
 
         // Écouteur pour ajouter un projet
         if (this.elements.addProjectBtn) {
@@ -44,6 +49,13 @@ export class ProjectsUI {
                 if (e.key === 'Enter') {
                     this.#handleAddProject();
                 }
+            });
+        }
+
+        // Écouteur pour ajouter du temps manuel
+        if (this.elements.addManualTimeBtn) {
+            this.elements.addManualTimeBtn.addEventListener('click', () => {
+                this.#handleAddManualTime();
             });
         }
 
@@ -77,6 +89,9 @@ export class ProjectsUI {
      */
     renderProjects(projects, todaySessions = []) {
         if (!this.elements.projectsList) return;
+
+        // Stocker la liste des projets pour l'ajout manuel de temps
+        this.projects = projects || [];
 
         // Vider la liste actuelle
         this.elements.projectsList.innerHTML = '';
@@ -169,15 +184,6 @@ export class ProjectsUI {
             this.#handleEditTime(project);
         });
 
-        // Bouton ajouter du temps rétroactif
-        const addRetroactiveBtn = createElement('button', {
-            class: 'projects-table__btn projects-table__btn--retroactive',
-            title: 'Ajouter du temps rétroactif'
-        }, '📅');
-        addRetroactiveBtn.addEventListener('click', () => {
-            this.#handleAddRetroactiveTime(project);
-        });
-
         // Bouton supprimer
         const deleteBtn = createElement('button', {
             class: 'projects-table__btn projects-table__btn--delete',
@@ -191,7 +197,6 @@ export class ProjectsUI {
         actionsContainer.appendChild(startBtn);
         actionsContainer.appendChild(editNameBtn);
         actionsContainer.appendChild(editTimeBtn);
-        actionsContainer.appendChild(addRetroactiveBtn);
         actionsContainer.appendChild(deleteBtn);
         actionsCell.appendChild(actionsContainer);
 
@@ -280,13 +285,17 @@ export class ProjectsUI {
     }
 
     /**
-     * Gère l'ajout de temps rétroactif
-     * @param {Project} project - Projet auquel ajouter du temps
+     * Gère l'ajout de temps manuel (global, avec sélecteur de projet)
      * @private
      */
-    #handleAddRetroactiveTime(project) {
-        // Créer et afficher la popover
-        const popover = new AddRetroactiveTimePopover(project, (data) => {
+    #handleAddManualTime() {
+        if (!this.projects || this.projects.length === 0) {
+            alert('Aucun projet disponible. Veuillez d\'abord créer un projet.');
+            return;
+        }
+
+        // Créer et afficher la popover avec tous les projets
+        const popover = new AddRetroactiveTimePopover(this.projects, (data) => {
             if (this.onAddRetroactiveTime) {
                 this.onAddRetroactiveTime(data);
             }

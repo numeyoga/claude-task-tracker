@@ -135,12 +135,14 @@ export class Popover {
  */
 export class AddRetroactiveTimePopover extends Popover {
     /**
-     * @param {Project} project - Projet auquel ajouter du temps
+     * @param {Project[]|Project} projects - Liste des projets ou projet unique (pour compatibilité)
      * @param {Function} onSubmit - Callback appelé lors de la soumission (reçoit les données)
      */
-    constructor(project, onSubmit) {
-        super('Ajouter du temps rétroactif');
-        this.project = project;
+    constructor(projects, onSubmit) {
+        super('Ajouter du temps manuel');
+        // Supporter à la fois un projet unique et une liste de projets
+        this.projects = Array.isArray(projects) ? projects : [projects];
+        this.project = Array.isArray(projects) ? null : projects;
         this.onSubmit = onSubmit;
     }
 
@@ -154,21 +156,62 @@ export class AddRetroactiveTimePopover extends Popover {
             class: 'retroactive-time-form'
         });
 
-        // Champ projet (lecture seule)
+        // Champ projet (sélecteur ou lecture seule selon le mode)
         const projectGroup = createElement('div', {
             class: 'form-group'
         });
         const projectLabel = createElement('label', {
-            class: 'form-label'
+            class: 'form-label',
+            for: 'retroactive-project'
         }, 'Projet');
-        const projectInput = createElement('input', {
-            type: 'text',
-            class: 'form-input',
-            value: this.project.name,
-            readonly: true
-        });
+
+        let projectSelect;
+        if (this.projects.length > 1) {
+            // Mode multi-projets: afficher un sélecteur
+            projectSelect = createElement('select', {
+                id: 'retroactive-project',
+                class: 'form-input',
+                required: true
+            });
+
+            // Ajouter une option vide
+            const emptyOption = createElement('option', {
+                value: '',
+                disabled: true,
+                selected: true
+            }, 'Choisir un projet...');
+            projectSelect.appendChild(emptyOption);
+
+            // Ajouter les projets
+            this.projects.forEach(project => {
+                const option = createElement('option', {
+                    value: project.id
+                }, project.name);
+                projectSelect.appendChild(option);
+            });
+        } else if (this.projects.length === 1) {
+            // Mode projet unique: afficher en lecture seule
+            projectSelect = createElement('input', {
+                type: 'text',
+                id: 'retroactive-project',
+                class: 'form-input',
+                value: this.projects[0].name,
+                readonly: true
+            });
+        } else {
+            // Aucun projet disponible
+            projectSelect = createElement('input', {
+                type: 'text',
+                id: 'retroactive-project',
+                class: 'form-input',
+                value: 'Aucun projet disponible',
+                readonly: true,
+                disabled: true
+            });
+        }
+
         projectGroup.appendChild(projectLabel);
-        projectGroup.appendChild(projectInput);
+        projectGroup.appendChild(projectSelect);
 
         // Champ date
         const dateGroup = createElement('div', {
@@ -357,7 +400,7 @@ export class AddRetroactiveTimePopover extends Popover {
         // Gérer la soumission du formulaire
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.#handleSubmit(dateInput, startTimeInput, hoursInput, minutesInput, endTimeInput, durationRadio);
+            this.#handleSubmit(projectSelect, dateInput, startTimeInput, hoursInput, minutesInput, endTimeInput, durationRadio);
         });
 
         return form;
@@ -367,7 +410,22 @@ export class AddRetroactiveTimePopover extends Popover {
      * Gère la soumission du formulaire
      * @private
      */
-    #handleSubmit(dateInput, startTimeInput, hoursInput, minutesInput, endTimeInput, durationRadio) {
+    #handleSubmit(projectSelect, dateInput, startTimeInput, hoursInput, minutesInput, endTimeInput, durationRadio) {
+        // Récupérer l'ID du projet sélectionné
+        let projectId;
+        if (projectSelect.tagName === 'SELECT') {
+            projectId = projectSelect.value;
+            if (!projectId) {
+                alert('Veuillez sélectionner un projet.');
+                return;
+            }
+        } else if (this.projects.length === 1) {
+            projectId = this.projects[0].id;
+        } else {
+            alert('Aucun projet disponible.');
+            return;
+        }
+
         const date = dateInput.value;
         const startTime = startTimeInput.value;
 
@@ -401,7 +459,7 @@ export class AddRetroactiveTimePopover extends Popover {
 
         // Préparer les données
         const data = {
-            projectId: this.project.id,
+            projectId: projectId,
             startTime: startDateTime,
             endTime: endDateTime,
             date: date
