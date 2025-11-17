@@ -240,6 +240,22 @@
         <p class="footer__text">Claude Time Tracker v2.0.0</p>
     </footer>
 
+    <!-- Modal pour les détails des sessions -->
+    <div id="session-details-modal" class="modal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 id="modal-project-name" class="modal__title">Détails du projet</h3>
+                <button id="close-modal-btn" class="modal__close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal__body">
+                <div id="sessions-list" class="sessions-list">
+                    <!-- Les sessions seront ajoutées ici dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Script principal (ES6 module) -->
     <script type="module" src="app.js"></script>
 </body>
