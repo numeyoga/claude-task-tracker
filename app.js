@@ -16,7 +16,6 @@ import { ProjectsUI } from './js/projects-ui.js';
 import { ProjectTimer } from './js/timer.js';
 import { ProjectTimerUI } from './js/project-timer-ui.js';
 import { WeeklyReportCalculator } from './js/weekly-report.js';
-import { DataExporter, ExportFormat, ExportType } from './js/data-export.js';
 import { ReportsUI } from './js/reports-ui.js';
 
 /**
@@ -32,7 +31,6 @@ class App {
         this.timer = null; // Initialisé après storage
         this.timerUI = new ProjectTimerUI();
         this.reportCalculator = new WeeklyReportCalculator();
-        this.dataExporter = new DataExporter();
         this.reportsUI = new ReportsUI();
 
         // État
@@ -759,14 +757,8 @@ class App {
         // Mettre à jour les statistiques globales
         this.reportsUI.updateSummary(this.currentReport);
 
-        // Afficher les statistiques par projet
-        this.reportsUI.renderProjectStats(this.currentReport.projectStats);
-
-        // Afficher les jours incomplets
-        this.reportsUI.renderIncompleteDays(this.currentReport.incompleteDaysList);
-
-        // Afficher le graphique quotidien
-        this.reportsUI.renderDailyChart(this.currentReport.dailyStats);
+        // Afficher le tableau hebdomadaire
+        this.reportsUI.renderWeeklyTable(this.currentReport);
 
         // Mettre à jour le bouton actif
         this.reportsUI.setActivePeriod(this.currentPeriodType);
@@ -802,85 +794,6 @@ class App {
     }
 
     /**
-     * Exporte le rapport en CSV
-     */
-    async exportReportCSV() {
-        try {
-            if (!this.currentReport) {
-                this.reportsUI.showError('Aucun rapport à exporter');
-                return;
-            }
-
-            this.dataExporter.exportAndDownload({
-                type: ExportType.WEEKLY_REPORT,
-                format: ExportFormat.CSV,
-                data: { report: this.currentReport }
-            });
-
-            this.reportsUI.showSuccess('Rapport exporté en CSV');
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'export CSV:', error);
-            this.reportsUI.showError('Erreur lors de l\'export CSV');
-        }
-    }
-
-    /**
-     * Exporte le rapport en JSON
-     */
-    async exportReportJSON() {
-        try {
-            if (!this.currentReport) {
-                this.reportsUI.showError('Aucun rapport à exporter');
-                return;
-            }
-
-            this.dataExporter.exportAndDownload({
-                type: ExportType.WEEKLY_REPORT,
-                format: ExportFormat.JSON,
-                data: { report: this.currentReport }
-            });
-
-            this.reportsUI.showSuccess('Rapport exporté en JSON');
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'export JSON:', error);
-            this.reportsUI.showError('Erreur lors de l\'export JSON');
-        }
-    }
-
-    /**
-     * Exporte toutes les données de l'application
-     */
-    async exportAllData() {
-        try {
-            // Charger toutes les données
-            const allEntries = await this.storage.getAllEntries();
-            const allSessions = await this.storage.getAllProjects();
-
-            // Récupérer toutes les sessions
-            const allProjectSessions = [];
-            for (const project of this.projects) {
-                const sessions = await this.storage.getSessionsByProject(project.id);
-                allProjectSessions.push(...sessions);
-            }
-
-            this.dataExporter.exportAndDownload({
-                type: ExportType.ALL_DATA,
-                format: ExportFormat.JSON,
-                data: {
-                    entries: allEntries,
-                    projects: this.projects,
-                    sessions: allProjectSessions
-                }
-            });
-
-            this.reportsUI.showSuccess('Toutes les données exportées');
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'export de toutes les données:', error);
-            this.reportsUI.showError('Erreur lors de l\'export de toutes les données');
-        }
-    }
-
-    /**
      * Configure les écouteurs d'événements pour les rapports
      */
     setupReportsEventListeners() {
@@ -892,19 +805,6 @@ class App {
         // Navigation de période
         this.reportsUI.onPeriodNavigate = (direction) => {
             this.navigatePeriod(direction);
-        };
-
-        // Export des rapports
-        this.reportsUI.onExportReportCSV = () => {
-            this.exportReportCSV();
-        };
-
-        this.reportsUI.onExportReportJSON = () => {
-            this.exportReportJSON();
-        };
-
-        this.reportsUI.onExportAllData = () => {
-            this.exportAllData();
         };
 
         console.log('✅ Écouteurs d\'événements des rapports configurés');

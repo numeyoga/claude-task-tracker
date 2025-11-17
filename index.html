@@ -184,58 +184,13 @@
                     <div class="report-summary__label">Jours travaillés</div>
                     <div id="report-worked-days" class="report-summary__value">0</div>
                 </div>
-                <div class="report-summary__card report-summary__card--warning">
-                    <div class="report-summary__label">Jours incomplets</div>
-                    <div id="report-incomplete-days" class="report-summary__value">0</div>
-                </div>
             </div>
 
-            <!-- Deux colonnes: Projets et Jours incomplets -->
-            <div class="report-content">
-                <!-- Colonne gauche: Temps par projet -->
-                <div class="report-content__left">
-                    <div class="report-projects">
-                        <h3 class="report-projects__title">Temps par projet</h3>
-                        <div id="report-projects-list" class="report-projects__list">
-                            <p class="report-projects__empty">Aucune donnée pour cette période</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Colonne droite: Jours incomplets et export -->
-                <div class="report-content__right">
-                    <!-- Jours incomplets -->
-                    <div class="incomplete-days">
-                        <h3 class="incomplete-days__title">Jours incomplets (&lt;8h)</h3>
-                        <div id="incomplete-days-list" class="incomplete-days__list">
-                            <p class="incomplete-days__empty">Aucun jour incomplet</p>
-                        </div>
-                    </div>
-
-                    <!-- Export -->
-                    <div class="report-export">
-                        <h3 class="report-export__title">Exporter les données</h3>
-                        <div class="report-export__buttons">
-                            <button id="export-report-csv-btn" class="report-export__btn">
-                                📊 Rapport CSV
-                            </button>
-                            <button id="export-report-json-btn" class="report-export__btn">
-                                📄 Rapport JSON
-                            </button>
-                            <button id="export-all-data-btn" class="report-export__btn">
-                                💾 Tout exporter
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Graphique quotidien -->
-            <div class="daily-chart">
-                <h3 class="daily-chart__title">Temps de présence quotidien</h3>
-                <div id="daily-chart-container" class="daily-chart__container">
-                    <p class="daily-chart__empty">Aucune donnée à afficher</p>
-                </div>
+            <!-- Tableau hebdomadaire -->
+            <div class="weekly-table-container">
+                <table id="weekly-table" class="weekly-table">
+                    <!-- Le tableau sera généré dynamiquement -->
+                </table>
             </div>
         </div>
     </section>
