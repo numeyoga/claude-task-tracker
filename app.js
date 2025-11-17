@@ -172,8 +172,8 @@ class App {
             // Ajouter à la liste locale
             this.todayEntries.push(entry);
 
-            // Mettre à jour l'UI
-            this.updateUI();
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
 
             // Afficher un message de succès
             const labels = {
@@ -228,6 +228,9 @@ class App {
             // Recharger les données
             await this.loadTodayData();
 
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
+
             this.ui.showSuccess('Pointage modifié');
 
             console.log('✅ Pointage modifié:', entry.id);
@@ -252,8 +255,8 @@ class App {
             // Retirer de la liste locale
             this.todayEntries = this.todayEntries.filter(e => e.id !== entry.id);
 
-            // Mettre à jour l'UI
-            this.updateUI();
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
 
             this.ui.showSuccess('Pointage supprimé');
 
@@ -290,6 +293,24 @@ class App {
 
         // Afficher la liste des pointages
         this.ui.renderEntries(this.todayEntries);
+    }
+
+    /**
+     * Met à jour TOUS les affichages de l'application
+     * Cette méthode doit être appelée à chaque modification de temps
+     */
+    updateAllDisplays() {
+        // Mettre à jour l'UI principale (temps de présence et pointages)
+        this.updateUI();
+
+        // Mettre à jour l'UI des projets (temps quotidien dans la liste)
+        this.updateProjectsUI();
+
+        // Mettre à jour l'UI du timer (statistiques et timer actif)
+        this.updateTimerUI();
+
+        // Si le modal est ouvert, le rafraîchir
+        this.refreshModalIfOpen();
     }
 
     /**
@@ -338,8 +359,8 @@ class App {
             // Ajouter à la liste locale
             this.projects.unshift(project);
 
-            // Mettre à jour l'UI
-            this.updateProjectsUI();
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
 
             this.projectsUI.showSuccess(`Projet "${name}" ajouté avec succès`);
 
@@ -366,7 +387,8 @@ class App {
 
             await this.storage.saveProject(project);
 
-            this.updateProjectsUI();
+            // Mettre à jour TOUS les affichages (important si le modal est ouvert)
+            this.updateAllDisplays();
 
             this.projectsUI.showSuccess(`Nom du projet modifié`);
 
@@ -393,7 +415,8 @@ class App {
 
             await this.storage.saveProject(project);
 
-            this.updateProjectsUI();
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
 
             this.projectsUI.showSuccess(`Temps du projet modifié`);
 
@@ -415,7 +438,8 @@ class App {
             // Retirer de la liste locale
             this.projects = this.projects.filter(p => p.id !== projectId);
 
-            this.updateProjectsUI();
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
 
             this.projectsUI.showSuccess('Projet supprimé');
 
@@ -462,6 +486,9 @@ class App {
                 await this.loadTodaySessions();
             }
 
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
+
             this.projectsUI.showSuccess(`Temps ajouté au projet "${project.name}"`);
 
             console.log('✅ Temps rétroactif ajouté:', projectId, duration);
@@ -490,9 +517,9 @@ class App {
                 this.timerUI.showSuccess('Chronomètre démarré');
             }
 
-            // Recharger les sessions et mettre à jour l'UI
+            // Recharger les sessions et mettre à jour TOUS les affichages
             await this.loadTodaySessions();
-            this.updateProjectsUI();
+            this.updateAllDisplays();
 
             console.log('✅ Chronomètre démarré pour le projet:', projectId);
         } catch (error) {
@@ -509,9 +536,9 @@ class App {
             const session = await this.timer.stop();
 
             if (session) {
-                // Recharger les sessions
+                // Recharger les sessions et mettre à jour TOUS les affichages
                 await this.loadTodaySessions();
-                this.updateProjectsUI();
+                this.updateAllDisplays();
 
                 this.timerUI.showSuccess('Chronomètre arrêté');
 
@@ -553,6 +580,19 @@ class App {
      */
     getSessionsForProject(projectId) {
         return this.todaySessions.filter(session => session.projectId === projectId);
+    }
+
+    /**
+     * Rafraîchit le modal de détails s'il est ouvert
+     */
+    refreshModalIfOpen() {
+        if (this.timerUI.isModalOpen()) {
+            const { projectId, projectName } = this.timerUI.getOpenModalInfo();
+            if (projectId) {
+                // Rafraîchir le contenu du modal sans le fermer
+                this.timerUI.refreshModalContent(projectId, projectName, this.getSessionsForProject(projectId));
+            }
+        }
     }
 
     // ======================
@@ -660,6 +700,9 @@ class App {
 
             // Mettre à jour l'affichage du temps quotidien dans la liste des projets
             this.updateProjectsUI();
+
+            // Rafraîchir le modal s'il est ouvert
+            this.refreshModalIfOpen();
         };
 
         // Démarrage du timer
