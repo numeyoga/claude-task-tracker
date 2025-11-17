@@ -1104,7 +1104,7 @@ body {
     background-color: var(--color-primary);
     color: white;
     padding: var(--spacing-md);
-    text-align: left;
+    text-align: center;
     font-weight: 600;
     font-size: var(--font-size-sm);
     border-bottom: 2px solid var(--color-primary-dark);
