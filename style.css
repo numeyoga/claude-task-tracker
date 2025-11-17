@@ -1082,186 +1082,112 @@ body {
     transition: width 0.3s ease;
 }
 
-/* Incomplete Days */
-.incomplete-days {
-    background-color: #fef3c7;
-    padding: var(--spacing-lg);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-warning);
-}
-
-.incomplete-days__title {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: var(--spacing-md);
-}
-
-.incomplete-days__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-}
-
-.incomplete-days__empty {
-    text-align: center;
-    color: var(--color-text-secondary);
-    padding: var(--spacing-lg);
-    font-style: italic;
-}
-
-.incomplete-day-item {
-    background-color: var(--color-surface);
-    padding: var(--spacing-md);
-    border-radius: var(--radius-sm);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: var(--shadow-sm);
-}
-
-.incomplete-day-item__date {
-    font-weight: 600;
-    color: var(--color-text);
-}
-
-.incomplete-day-item__info {
-    text-align: right;
-    font-size: var(--font-size-sm);
-}
-
-.incomplete-day-item__time {
-    color: var(--color-text-secondary);
-}
-
-.incomplete-day-item__missing {
-    color: var(--color-warning);
-    font-weight: 600;
-}
-
-/* Report Export */
-.report-export {
+/* Weekly Table */
+.weekly-table-container {
     background-color: var(--color-background);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
+    overflow-x: auto;
+    margin-top: var(--spacing-lg);
 }
 
-.report-export__title {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: var(--spacing-md);
-}
-
-.report-export__buttons {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-}
-
-.report-export__btn {
-    padding: var(--spacing-md);
-    border: none;
+.weekly-table {
+    width: 100%;
+    border-collapse: collapse;
     background-color: var(--color-surface);
-    color: var(--color-text);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+    overflow: hidden;
     box-shadow: var(--shadow-sm);
-    text-align: left;
 }
 
-.report-export__btn:hover {
+.weekly-table__header {
     background-color: var(--color-primary);
     color: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-/* Daily Chart */
-.daily-chart {
-    background-color: var(--color-background);
-    padding: var(--spacing-lg);
-    border-radius: var(--radius-md);
-}
-
-.daily-chart__title {
-    font-size: var(--font-size-lg);
+    padding: var(--spacing-md);
+    text-align: left;
     font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: var(--spacing-md);
-}
-
-.daily-chart__container {
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.daily-chart__empty {
-    text-align: center;
-    color: var(--color-text-secondary);
-    font-style: italic;
-}
-
-/* Daily Chart Bars */
-.daily-chart__bars {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-around;
-    height: 200px;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md) 0;
-}
-
-.daily-chart__bar {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-xs);
-}
-
-.daily-chart__bar-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    height: 100%;
-    position: relative;
-}
-
-.daily-chart__bar-fill {
-    width: 100%;
-    background: linear-gradient(to top, var(--color-primary), var(--color-primary-dark));
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-    transition: height 0.3s ease;
-    position: relative;
-}
-
-.daily-chart__bar-fill--incomplete {
-    background: linear-gradient(to top, var(--color-warning), #fb923c);
-}
-
-.daily-chart__bar-label {
     font-size: var(--font-size-sm);
+    border-bottom: 2px solid var(--color-primary-dark);
+}
+
+.weekly-table__header--total {
+    text-align: center;
+    background-color: var(--color-primary-dark);
+}
+
+.weekly-table__row {
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.2s ease;
+}
+
+.weekly-table__row:hover {
+    background-color: var(--color-background);
+}
+
+.weekly-table__row--total {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    border-top: 2px solid var(--color-primary);
+}
+
+.weekly-table__row--total:hover {
+    background-color: #e5e7eb;
+}
+
+.weekly-table__cell {
+    padding: var(--spacing-md);
+    text-align: left;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+
+.weekly-table__cell--project {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.weekly-table__cell--time {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+}
+
+.weekly-table__cell--total {
+    text-align: center;
+    font-weight: 600;
+    background-color: #fef3c7;
+    font-family: 'Courier New', monospace;
+}
+
+.weekly-table__cell--total-label {
+    background-color: #f3f4f6;
+    font-weight: 700;
+    font-size: var(--font-size-base);
+}
+
+.weekly-table__cell--total-time {
+    text-align: center;
+    font-size: var(--font-size-xs);
+}
+
+.weekly-table__color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.weekly-table__total-project {
+    color: var(--color-primary);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.weekly-table__total-presence {
     color: var(--color-text-secondary);
     font-weight: 500;
-    margin-top: var(--spacing-xs);
-}
-
-.daily-chart__bar-value {
-    font-size: 0.625rem;
-    color: var(--color-text);
-    font-weight: 600;
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    white-space: nowrap;
 }
 
 /* ======================
