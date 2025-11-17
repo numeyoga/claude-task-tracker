@@ -758,7 +758,7 @@ class App {
         this.reportsUI.updateSummary(this.currentReport);
 
         // Afficher le tableau hebdomadaire
-        this.reportsUI.renderWeeklyTable(this.currentReport);
+        this.reportsUI.renderWeeklyTable(this.currentReport, this.currentPeriodType);
 
         // Mettre à jour le bouton actif
         this.reportsUI.setActivePeriod(this.currentPeriodType);
