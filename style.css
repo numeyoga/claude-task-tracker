@@ -849,6 +849,36 @@ body {
     color: var(--color-text);
 }
 
+.reports-section__title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.reports-section__manage-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.reports-section__manage-btn:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.reports-section__manage-btn:active {
+    transform: translateY(0);
+}
+
 .reports-section__controls {
     display: flex;
     flex-wrap: wrap;

@@ -822,11 +822,19 @@ class App {
      * Configure les écouteurs d'événements pour la gestion des entrées
      */
     setupEntriesManagementEventListeners() {
-        // Bouton pour ouvrir la vue de gestion
+        // Bouton pour ouvrir la vue de gestion (toutes les entrées)
         const manageEntriesBtn = document.getElementById('manage-entries-btn');
         if (manageEntriesBtn) {
             manageEntriesBtn.addEventListener('click', () => {
                 this.openEntriesManagement();
+            });
+        }
+
+        // Bouton pour ouvrir la vue de gestion (entrées de la période)
+        const managePeriodEntriesBtn = document.getElementById('manage-period-entries-btn');
+        if (managePeriodEntriesBtn) {
+            managePeriodEntriesBtn.addEventListener('click', () => {
+                this.openPeriodEntriesManagement();
             });
         }
 
@@ -851,9 +859,27 @@ class App {
     }
 
     /**
-     * Ouvre la vue de gestion des entrées
+     * Ouvre la vue de gestion des entrées (toutes)
      */
     async openEntriesManagement() {
+        // Réinitialiser le filtre
+        this.entriesManagementUI.clearPeriodFilter();
+        this.entriesManagementUI.show();
+        await this.loadAllEntries();
+    }
+
+    /**
+     * Ouvre la vue de gestion des entrées (période courante)
+     */
+    async openPeriodEntriesManagement() {
+        // Définir le filtre de période
+        const periodLabel = this.reportCalculator.formatDateRange(this.currentPeriodStart, this.currentPeriodEnd);
+        this.entriesManagementUI.setPeriodFilter({
+            startDate: this.currentPeriodStart,
+            endDate: this.currentPeriodEnd,
+            label: periodLabel
+        });
+
         this.entriesManagementUI.show();
         await this.loadAllEntries();
     }
