@@ -223,7 +223,7 @@ export class SessionsManagementUI {
         sessionDiv.dataset.sessionId = session.id;
 
         const projectName = projectNames.get(session.projectId) || 'Projet inconnu';
-        const duration = formatDuration(session.getTotalDuration());
+        const duration = formatDuration(session.getDuration());
         const startTime = this.formatTime(session.startTime);
         const endTime = session.endTime ? this.formatTime(session.endTime) : 'En cours';
 
