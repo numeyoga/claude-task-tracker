@@ -16,6 +16,7 @@ export class SessionsManagementUI {
         this.periodFilter = null; // { startDate: Date, endDate: Date, label: string }
 
         // Callbacks
+        this.onEditSession = null;
         this.onDeleteSession = null;
         this.onRefresh = null;
     }
@@ -236,14 +237,24 @@ export class SessionsManagementUI {
                 </div>
             </div>
             <div class="entry-item__actions">
+                <button class="entry-item__btn entry-item__btn--edit" data-action="edit" title="Modifier">
+                    ✏️
+                </button>
                 <button class="entry-item__btn entry-item__btn--delete" data-action="delete" title="Supprimer">
                     🗑️
                 </button>
             </div>
         `;
 
-        // Ajouter l'écouteur d'événement pour la suppression
+        // Ajouter les écouteurs d'événements
+        const editBtn = sessionDiv.querySelector('[data-action="edit"]');
         const deleteBtn = sessionDiv.querySelector('[data-action="delete"]');
+
+        if (editBtn && this.onEditSession) {
+            editBtn.addEventListener('click', () => {
+                this.onEditSession(session);
+            });
+        }
 
         if (deleteBtn && this.onDeleteSession) {
             deleteBtn.addEventListener('click', () => {
@@ -297,16 +308,46 @@ export class SessionsManagementUI {
     }
 
     /**
+     * Affiche un message de succès
+     * @param {string} message - Message à afficher
+     */
+    showSuccess(message) {
+        this.showToast(message, 'success');
+    }
+
+    /**
      * Affiche un message d'erreur
      * @param {string} message - Message d'erreur
      */
     showError(message) {
-        if (!this.listContainer) return;
+        this.showToast(message, 'error');
+    }
 
-        this.listContainer.innerHTML = `
-            <div class="all-entries-list__empty">
-                ❌ ${message}
-            </div>
-        `;
+    /**
+     * Affiche un toast
+     * @param {string} message - Message à afficher
+     * @param {string} type - Type de toast ('success' ou 'error')
+     */
+    showToast(message, type) {
+        // Créer le toast
+        const toast = document.createElement('div');
+        toast.className = `toast toast--${type}`;
+        toast.textContent = message;
+
+        // Ajouter au body
+        document.body.appendChild(toast);
+
+        // Afficher avec un délai pour l'animation
+        setTimeout(() => {
+            toast.classList.add('toast--visible');
+        }, 10);
+
+        // Masquer après 3 secondes
+        setTimeout(() => {
+            toast.classList.remove('toast--visible');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
     }
 }

@@ -596,6 +596,85 @@ class App {
     }
 
     /**
+     * Modifie une session depuis l'interface de gestion
+     * @param {ProjectSession} session - Session à modifier
+     */
+    async editSessionFromManagement(session) {
+        try {
+            // Demander la nouvelle heure de début
+            const currentStartTime = session.startTime.toTimeString().substring(0, 5); // HH:MM
+            const newStartTimeStr = prompt(
+                'Modifier l\'heure de début (format HH:MM):',
+                currentStartTime
+            );
+
+            if (!newStartTimeStr) return;
+
+            // Parser la nouvelle heure de début
+            const [startHours, startMinutes] = newStartTimeStr.split(':').map(s => parseInt(s.trim()));
+
+            if (isNaN(startHours) || isNaN(startMinutes) || startHours < 0 || startHours > 23 || startMinutes < 0 || startMinutes > 59) {
+                this.sessionsManagementUI.showError('Format d\'heure invalide. Utilisez HH:MM');
+                return;
+            }
+
+            // Demander la nouvelle heure de fin (si la session est terminée)
+            let newEndTime = session.endTime;
+            if (session.endTime) {
+                const currentEndTime = session.endTime.toTimeString().substring(0, 5); // HH:MM
+                const newEndTimeStr = prompt(
+                    'Modifier l\'heure de fin (format HH:MM):',
+                    currentEndTime
+                );
+
+                if (!newEndTimeStr) return;
+
+                // Parser la nouvelle heure de fin
+                const [endHours, endMinutes] = newEndTimeStr.split(':').map(s => parseInt(s.trim()));
+
+                if (isNaN(endHours) || isNaN(endMinutes) || endHours < 0 || endHours > 23 || endMinutes < 0 || endMinutes > 59) {
+                    this.sessionsManagementUI.showError('Format d\'heure invalide. Utilisez HH:MM');
+                    return;
+                }
+
+                // Créer un nouveau timestamp avec la nouvelle heure de fin
+                newEndTime = new Date(session.endTime);
+                newEndTime.setHours(endHours, endMinutes, 0, 0);
+            }
+
+            // Créer un nouveau timestamp avec la nouvelle heure de début
+            const newStartTime = new Date(session.startTime);
+            newStartTime.setHours(startHours, startMinutes, 0, 0);
+
+            // Vérifier que l'heure de début est avant l'heure de fin
+            if (newEndTime && newStartTime >= newEndTime) {
+                this.sessionsManagementUI.showError('L\'heure de début doit être avant l\'heure de fin');
+                return;
+            }
+
+            // Mettre à jour la session
+            session.startTime = newStartTime;
+            session.endTime = newEndTime;
+
+            // Sauvegarder dans IndexedDB
+            await this.storage.saveSession(session);
+
+            // Recharger toutes les sessions pour rafraîchir l'affichage
+            await this.loadAllSessions();
+
+            // Afficher un message de succès
+            this.sessionsManagementUI.showSuccess?.('Session modifiée') ||
+                this.timerUI.showSuccess('Session modifiée');
+
+            console.log('✅ Session modifiée:', session.id);
+        } catch (error) {
+            console.error('❌ Erreur lors de la modification de la session:', error);
+            this.sessionsManagementUI.showError?.('Erreur lors de la modification de la session') ||
+                this.timerUI.showError('Erreur lors de la modification de la session');
+        }
+    }
+
+    /**
      * Supprime une session de projet
      * @param {string} sessionId - ID de la session à supprimer
      */
@@ -931,6 +1010,10 @@ class App {
         // Callbacks pour la gestion des sessions de projet
         this.sessionsManagementUI.onRefresh = async () => {
             await this.loadAllSessions();
+        };
+
+        this.sessionsManagementUI.onEditSession = async (session) => {
+            await this.editSessionFromManagement(session);
         };
 
         this.sessionsManagementUI.onDeleteSession = async (session) => {
