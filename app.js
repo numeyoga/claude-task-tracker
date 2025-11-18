@@ -560,6 +560,66 @@ class App {
     }
 
     /**
+     * Édite une session de projet
+     * @param {Object} data - Données de la session {sessionId, startTime, endTime}
+     */
+    async editSession(data) {
+        try {
+            const { sessionId, startTime, endTime } = data;
+
+            // Trouver la session
+            const session = this.todaySessions.find(s => s.id === sessionId);
+            if (!session) {
+                throw new Error('Session non trouvée');
+            }
+
+            // Mettre à jour la session
+            session.startTime = startTime;
+            session.endTime = endTime;
+
+            // Sauvegarder dans IndexedDB
+            await this.storage.saveSession(session);
+
+            // Recharger les sessions
+            await this.loadTodaySessions();
+
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
+
+            this.timerUI.showSuccess('Session modifiée');
+
+            console.log('✅ Session modifiée:', sessionId);
+        } catch (error) {
+            console.error('❌ Erreur lors de la modification de la session:', error);
+            this.timerUI.showError(error.message || 'Erreur lors de la modification de la session');
+        }
+    }
+
+    /**
+     * Supprime une session de projet
+     * @param {string} sessionId - ID de la session à supprimer
+     */
+    async deleteSession(sessionId) {
+        try {
+            // Supprimer de IndexedDB
+            await this.storage.deleteSession(sessionId);
+
+            // Retirer de la liste locale
+            this.todaySessions = this.todaySessions.filter(s => s.id !== sessionId);
+
+            // Mettre à jour TOUS les affichages
+            this.updateAllDisplays();
+
+            this.timerUI.showSuccess('Session supprimée');
+
+            console.log('✅ Session supprimée:', sessionId);
+        } catch (error) {
+            console.error('❌ Erreur lors de la suppression de la session:', error);
+            this.timerUI.showError('Erreur lors de la suppression de la session');
+        }
+    }
+
+    /**
      * Rafraîchit le modal de détails s'il est ouvert
      */
     refreshModalIfOpen() {
@@ -695,6 +755,16 @@ class App {
         // Récupération des sessions d'un projet pour affichage des détails
         this.timerUI.onGetSessionsForProject = async (projectId) => {
             return this.getSessionsForProject(projectId);
+        };
+
+        // Édition d'une session
+        this.timerUI.onEditSession = (data) => {
+            this.editSession(data);
+        };
+
+        // Suppression d'une session
+        this.timerUI.onDeleteSession = (sessionId) => {
+            this.deleteSession(sessionId);
         };
 
         console.log('✅ Écouteurs d\'événements du chronomètre configurés');

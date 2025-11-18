@@ -1,7 +1,7 @@
 'use strict';
 
 import { formatDuration, createElement } from './utils.js';
-import { AddRetroactiveTimePopover } from './popover.js';
+import { AddRetroactiveTimePopover, AddProjectPopover } from './popover.js';
 
 /**
  * Gestion de l'interface utilisateur pour les projets
@@ -11,19 +11,19 @@ export class ProjectsUI {
         this.elements = {
             projectsList: null,
             addProjectBtn: null,
-            addProjectInput: null,
-            addManualTimeBtn: null
+            addTimeBtn: null
         };
+
+        // Liste des projets (pour la popover de temps)
+        this.projects = [];
 
         // Callbacks
         this.onAddProject = null;
         this.onUpdateName = null;
+        this.onUpdateTime = null;
         this.onDeleteProject = null;
         this.onStartProject = null;
         this.onAddRetroactiveTime = null;
-
-        // Liste des projets pour le bouton d'ajout manuel
-        this.projects = [];
     }
 
     /**
@@ -32,29 +32,19 @@ export class ProjectsUI {
     init() {
         this.elements.projectsList = document.getElementById('projects-list');
         this.elements.addProjectBtn = document.getElementById('add-project-btn');
-        this.elements.addProjectInput = document.getElementById('new-project-name');
-        this.elements.addManualTimeBtn = document.getElementById('add-manual-time-btn');
+        this.elements.addTimeBtn = document.getElementById('add-time-btn');
 
         // Écouteur pour ajouter un projet
         if (this.elements.addProjectBtn) {
             this.elements.addProjectBtn.addEventListener('click', () => {
-                this.#handleAddProject();
+                this.#showAddProjectPopover();
             });
         }
 
-        // Écouteur pour ajouter un projet avec la touche Entrée
-        if (this.elements.addProjectInput) {
-            this.elements.addProjectInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.#handleAddProject();
-                }
-            });
-        }
-
-        // Écouteur pour ajouter du temps manuel
-        if (this.elements.addManualTimeBtn) {
-            this.elements.addManualTimeBtn.addEventListener('click', () => {
-                this.#handleAddManualTime();
+        // Écouteur pour ajouter du temps
+        if (this.elements.addTimeBtn) {
+            this.elements.addTimeBtn.addEventListener('click', () => {
+                this.#showAddTimePopover();
             });
         }
 
@@ -62,23 +52,36 @@ export class ProjectsUI {
     }
 
     /**
-     * Gère l'ajout d'un nouveau projet
+     * Affiche la popover pour ajouter un projet
      * @private
      */
-    #handleAddProject() {
-        if (!this.elements.addProjectInput) return;
+    #showAddProjectPopover() {
+        const popover = new AddProjectPopover((name) => {
+            if (this.onAddProject) {
+                this.onAddProject(name);
+            }
+        });
 
-        const name = this.elements.addProjectInput.value.trim();
-        if (!name) {
+        popover.show();
+    }
+
+    /**
+     * Affiche la popover pour ajouter du temps
+     * @private
+     */
+    #showAddTimePopover() {
+        if (this.projects.length === 0) {
+            alert('Aucun projet disponible. Veuillez d\'abord créer un projet.');
             return;
         }
 
-        if (this.onAddProject) {
-            this.onAddProject(name);
-        }
+        const popover = new AddRetroactiveTimePopover(this.projects, (data) => {
+            if (this.onAddRetroactiveTime) {
+                this.onAddRetroactiveTime(data);
+            }
+        });
 
-        // Vider le champ
-        this.elements.addProjectInput.value = '';
+        popover.show();
     }
 
     /**
@@ -89,7 +92,7 @@ export class ProjectsUI {
     renderProjects(projects, todaySessions = []) {
         if (!this.elements.projectsList) return;
 
-        // Stocker la liste des projets pour l'ajout manuel de temps
+        // Sauvegarder la liste des projets
         this.projects = projects || [];
 
         // Vider la liste actuelle
@@ -174,6 +177,15 @@ export class ProjectsUI {
             this.#handleEditName(project);
         });
 
+        // Bouton ajouter du temps rétroactif
+        const addRetroactiveBtn = createElement('button', {
+            class: 'projects-table__btn projects-table__btn--retroactive',
+            title: 'Ajouter du temps'
+        }, '📅');
+        addRetroactiveBtn.addEventListener('click', () => {
+            this.#handleAddRetroactiveTime(project);
+        });
+
         // Bouton supprimer
         const deleteBtn = createElement('button', {
             class: 'projects-table__btn projects-table__btn--delete',
@@ -186,6 +198,7 @@ export class ProjectsUI {
         actionsContainer.appendChild(timeDisplay);
         actionsContainer.appendChild(startBtn);
         actionsContainer.appendChild(editNameBtn);
+        actionsContainer.appendChild(addRetroactiveBtn);
         actionsContainer.appendChild(deleteBtn);
         actionsCell.appendChild(actionsContainer);
 
@@ -233,17 +246,13 @@ export class ProjectsUI {
     }
 
     /**
-     * Gère l'ajout de temps manuel (global, avec sélecteur de projet)
+     * Gère l'ajout de temps rétroactif
+     * @param {Project} project - Projet auquel ajouter du temps
      * @private
      */
-    #handleAddManualTime() {
-        if (!this.projects || this.projects.length === 0) {
-            alert('Aucun projet disponible. Veuillez d\'abord créer un projet.');
-            return;
-        }
-
-        // Créer et afficher la popover avec tous les projets
-        const popover = new AddRetroactiveTimePopover(this.projects, (data) => {
+    #handleAddRetroactiveTime(project) {
+        // Créer et afficher la popover
+        const popover = new AddRetroactiveTimePopover(project, (data) => {
             if (this.onAddRetroactiveTime) {
                 this.onAddRetroactiveTime(data);
             }

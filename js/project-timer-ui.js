@@ -1,6 +1,7 @@
 'use strict';
 
 import { formatDuration, formatTime, createElement } from './utils.js';
+import { EditSessionPopover } from './popover.js';
 
 /**
  * Gestion de l'interface utilisateur pour le chronomètre de projet
@@ -30,6 +31,8 @@ export class ProjectTimerUI {
         this.onStartProject = null;
         this.onStopTimer = null;
         this.onGetSessionsForProject = null; // Callback pour récupérer les sessions d'un projet
+        this.onEditSession = null; // Callback pour éditer une session
+        this.onDeleteSession = null; // Callback pour supprimer une session
     }
 
     /**
@@ -427,11 +430,70 @@ export class ProjectTimerUI {
         details.appendChild(endLabel);
         details.appendChild(endValue);
 
+        // Boutons d'action
+        const actionsContainer = createElement('div', {
+            class: 'session-item__actions'
+        });
+
+        // Bouton modifier (seulement si la session est terminée)
+        if (session.endTime) {
+            const editBtn = createElement('button', {
+                class: 'session-item__btn session-item__btn--edit',
+                title: 'Modifier'
+            }, '✏️');
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.#handleEditSession(session, this.modalState.projectName);
+            });
+            actionsContainer.appendChild(editBtn);
+        }
+
+        // Bouton supprimer
+        const deleteBtn = createElement('button', {
+            class: 'session-item__btn session-item__btn--delete',
+            title: 'Supprimer'
+        }, '🗑️');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.#handleDeleteSession(session);
+        });
+
+        actionsContainer.appendChild(deleteBtn);
+
         // Assembler l'élément
         item.appendChild(header);
         item.appendChild(details);
+        item.appendChild(actionsContainer);
 
         return item;
+    }
+
+    /**
+     * Gère l'édition d'une session
+     * @param {ProjectSession} session - Session à éditer
+     * @param {string} projectName - Nom du projet
+     * @private
+     */
+    #handleEditSession(session, projectName) {
+        const popover = new EditSessionPopover(session, projectName, (data) => {
+            if (this.onEditSession) {
+                this.onEditSession(data);
+            }
+        });
+
+        popover.show();
+    }
+
+    /**
+     * Gère la suppression d'une session
+     * @param {ProjectSession} session - Session à supprimer
+     * @private
+     */
+    #handleDeleteSession(session) {
+        const confirm = window.confirm('Êtes-vous sûr de vouloir supprimer cette session ?');
+        if (confirm && this.onDeleteSession) {
+            this.onDeleteSession(session.id);
+        }
     }
 
     /**
