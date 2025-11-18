@@ -9,8 +9,15 @@
 <body>
     <!-- En-tête -->
     <header class="header">
-        <h1 class="header__title">Claude Time Tracker</h1>
-        <p class="header__subtitle">Suivi de votre temps de présence</p>
+        <div class="header__content">
+            <div class="header__text">
+                <h1 class="header__title">Claude Time Tracker</h1>
+                <p class="header__subtitle">Suivi de votre temps de présence</p>
+            </div>
+            <button id="manage-entries-btn" class="header__manage-btn" title="Gérer toutes les entrées">
+                📋 Gérer les entrées
+            </button>
+        </div>
     </header>
 
     <!-- Barre de présence journalière compacte avec pointages intégrés -->
@@ -191,6 +198,29 @@
                 <table id="weekly-table" class="weekly-table">
                     <!-- Le tableau sera généré dynamiquement -->
                 </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Gestion des Entrées -->
+    <section class="entries-management-section" id="entries-management-section">
+        <div class="entries-management-section__container">
+            <!-- En-tête avec bouton de fermeture -->
+            <div class="entries-management-section__header">
+                <h2 class="entries-management-section__title">Gestion des Entrées</h2>
+                <button id="close-entries-management-btn" class="entries-management-section__close-btn" title="Fermer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Message d'information -->
+            <div class="entries-management-section__info">
+                <p>Toutes vos entrées de pointage dans l'ordre antéchronologique (du plus récent au plus ancien).</p>
+            </div>
+
+            <!-- Liste des entrées -->
+            <div id="all-entries-list" class="all-entries-list">
+                <div class="all-entries-list__empty">Chargement...</div>
             </div>
         </div>
     </section>

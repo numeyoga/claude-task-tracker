@@ -17,6 +17,7 @@ import { ProjectTimer } from './js/timer.js';
 import { ProjectTimerUI } from './js/project-timer-ui.js';
 import { WeeklyReportCalculator } from './js/weekly-report.js';
 import { ReportsUI } from './js/reports-ui.js';
+import { EntriesManagementUI } from './js/entries-management-ui.js';
 
 /**
  * Contrôleur principal de l'application
@@ -32,6 +33,7 @@ class App {
         this.timerUI = new ProjectTimerUI();
         this.reportCalculator = new WeeklyReportCalculator();
         this.reportsUI = new ReportsUI();
+        this.entriesManagementUI = new EntriesManagementUI();
 
         // État
         this.todayEntries = [];
@@ -68,6 +70,7 @@ class App {
             this.projectsUI.init();
             this.timerUI.init();
             this.reportsUI.init();
+            this.entriesManagementUI.init();
 
             // Charger les données du jour
             await this.loadTodayData();
@@ -86,6 +89,7 @@ class App {
             this.setupProjectsEventListeners();
             this.setupTimerEventListeners();
             this.setupReportsEventListeners();
+            this.setupEntriesManagementEventListeners();
 
             // Démarrer la mise à jour en temps réel
             this.startRealtimeUpdate();
@@ -808,6 +812,65 @@ class App {
         };
 
         console.log('✅ Écouteurs d\'événements des rapports configurés');
+    }
+
+    // ======================
+    // Gestion des entrées (toutes)
+    // ======================
+
+    /**
+     * Configure les écouteurs d'événements pour la gestion des entrées
+     */
+    setupEntriesManagementEventListeners() {
+        // Bouton pour ouvrir la vue de gestion
+        const manageEntriesBtn = document.getElementById('manage-entries-btn');
+        if (manageEntriesBtn) {
+            manageEntriesBtn.addEventListener('click', () => {
+                this.openEntriesManagement();
+            });
+        }
+
+        // Rafraîchir les entrées
+        this.entriesManagementUI.onRefresh = async () => {
+            await this.loadAllEntries();
+        };
+
+        // Modifier une entrée
+        this.entriesManagementUI.onEditEntry = (entry) => {
+            this.editEntry(entry);
+        };
+
+        // Supprimer une entrée
+        this.entriesManagementUI.onDeleteEntry = async (entry) => {
+            await this.deleteEntry(entry);
+            // Recharger les entrées après suppression
+            await this.loadAllEntries();
+        };
+
+        console.log('✅ Écouteurs d\'événements de la gestion des entrées configurés');
+    }
+
+    /**
+     * Ouvre la vue de gestion des entrées
+     */
+    async openEntriesManagement() {
+        this.entriesManagementUI.show();
+        await this.loadAllEntries();
+    }
+
+    /**
+     * Charge toutes les entrées de la base de données
+     */
+    async loadAllEntries() {
+        try {
+            const allEntries = await this.storage.getAllEntries();
+            this.entriesManagementUI.renderAllEntries(allEntries);
+
+            console.log(`📋 ${allEntries.length} entrée(s) chargée(s) pour la gestion`);
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement de toutes les entrées:', error);
+            this.entriesManagementUI.showError('Erreur lors du chargement des entrées');
+        }
     }
 }
 
