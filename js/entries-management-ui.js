@@ -10,6 +10,10 @@ export class EntriesManagementUI {
         this.section = null;
         this.listContainer = null;
         this.closeBtn = null;
+        this.infoElement = null;
+
+        // Filtre de période
+        this.periodFilter = null; // { startDate: Date, endDate: Date, label: string }
 
         // Callbacks
         this.onEditEntry = null;
@@ -24,6 +28,7 @@ export class EntriesManagementUI {
         this.section = document.getElementById('entries-management-section');
         this.listContainer = document.getElementById('all-entries-list');
         this.closeBtn = document.getElementById('close-entries-management-btn');
+        this.infoElement = this.section?.querySelector('.entries-management-section__info p');
 
         this.setupEventListeners();
 
@@ -38,6 +43,36 @@ export class EntriesManagementUI {
             this.closeBtn.addEventListener('click', () => {
                 this.hide();
             });
+        }
+    }
+
+    /**
+     * Définit un filtre de période
+     * @param {Object} filter - Filtre avec startDate, endDate et label
+     */
+    setPeriodFilter(filter) {
+        this.periodFilter = filter;
+        this.updateInfoMessage();
+    }
+
+    /**
+     * Réinitialise le filtre de période
+     */
+    clearPeriodFilter() {
+        this.periodFilter = null;
+        this.updateInfoMessage();
+    }
+
+    /**
+     * Met à jour le message d'information selon le filtre
+     */
+    updateInfoMessage() {
+        if (!this.infoElement) return;
+
+        if (this.periodFilter) {
+            this.infoElement.textContent = `Entrées de pointage pour la période : ${this.periodFilter.label}`;
+        } else {
+            this.infoElement.textContent = 'Toutes vos entrées de pointage dans l\'ordre antéchronologique (du plus récent au plus ancien).';
         }
     }
 
@@ -76,22 +111,51 @@ export class EntriesManagementUI {
         // Vider le conteneur
         this.listContainer.innerHTML = '';
 
-        if (entries.length === 0) {
+        // Appliquer le filtre de période si défini
+        let filteredEntries = entries;
+        if (this.periodFilter) {
+            filteredEntries = this.filterEntriesByPeriod(entries, this.periodFilter.startDate, this.periodFilter.endDate);
+        }
+
+        if (filteredEntries.length === 0) {
+            const message = this.periodFilter
+                ? 'Aucune entrée de pointage pour cette période'
+                : 'Aucune entrée de pointage enregistrée';
             this.listContainer.innerHTML = `
                 <div class="all-entries-list__empty">
-                    Aucune entrée de pointage enregistrée
+                    ${message}
                 </div>
             `;
             return;
         }
 
         // Grouper les entrées par date
-        const entriesByDate = this.groupEntriesByDate(entries);
+        const entriesByDate = this.groupEntriesByDate(filteredEntries);
 
         // Créer les éléments pour chaque date
         Object.keys(entriesByDate).forEach(date => {
             const dateGroup = this.createDateGroup(date, entriesByDate[date]);
             this.listContainer.appendChild(dateGroup);
+        });
+    }
+
+    /**
+     * Filtre les entrées par période
+     * @param {TimeEntry[]} entries - Liste des entrées
+     * @param {Date} startDate - Date de début
+     * @param {Date} endDate - Date de fin
+     * @returns {TimeEntry[]} Entrées filtrées
+     */
+    filterEntriesByPeriod(entries, startDate, endDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        return entries.filter(entry => {
+            const entryDate = new Date(entry.timestamp);
+            return entryDate >= start && entryDate <= end;
         });
     }
 
