@@ -129,7 +129,7 @@ export class ReportsUI {
         const headerRow = createElement('tr');
 
         // Colonne "Projet"
-        const projectHeader = createElement('th', { class: 'weekly-table__header' }, 'Projet');
+        const projectHeader = createElement('th', { class: 'weekly-table__header weekly-table__header--project' }, 'Projet');
         headerRow.appendChild(projectHeader);
 
         // Colonnes pour chaque jour (lundi à vendredi)
@@ -187,7 +187,7 @@ export class ReportsUI {
         const headerRow = createElement('tr');
 
         // Colonne "Projet"
-        const projectHeader = createElement('th', { class: 'weekly-table__header' }, 'Projet');
+        const projectHeader = createElement('th', { class: 'weekly-table__header weekly-table__header--project' }, 'Projet');
         headerRow.appendChild(projectHeader);
 
         // Colonnes pour chaque semaine
@@ -318,23 +318,30 @@ export class ReportsUI {
 
         // Colonne du label avec indicateurs de couleur
         const labelCell = createElement('td', {
-            class: 'weekly-table__cell weekly-table__cell--project weekly-table__cell--total-label'
+            class: 'weekly-table__cell weekly-table__cell--total-label'
         });
 
-        // Ajouter les indicateurs de couleur
+        // Ajouter les divs pour "Projets" et "Présence" avec leurs indicateurs
+        const projectDiv = createElement('div', {
+            class: 'weekly-table__total-project'
+        });
         const projectIndicator = createElement('span', {
             class: 'weekly-table__color weekly-table__color--project'
         });
+        projectDiv.appendChild(projectIndicator);
+        projectDiv.appendChild(document.createTextNode(' Projets'));
 
+        const presenceDiv = createElement('div', {
+            class: 'weekly-table__total-presence'
+        });
         const presenceIndicator = createElement('span', {
             class: 'weekly-table__color weekly-table__color--presence'
         });
+        presenceDiv.appendChild(presenceIndicator);
+        presenceDiv.appendChild(document.createTextNode(' Présence'));
 
-        labelCell.appendChild(projectIndicator);
-        labelCell.appendChild(document.createTextNode(' Projets'));
-        labelCell.appendChild(document.createElement('br'));
-        labelCell.appendChild(presenceIndicator);
-        labelCell.appendChild(document.createTextNode(' Présence'));
+        labelCell.appendChild(projectDiv);
+        labelCell.appendChild(presenceDiv);
 
         row.appendChild(labelCell);
 
@@ -450,23 +457,30 @@ export class ReportsUI {
 
         // Colonne du label avec indicateurs de couleur
         const labelCell = createElement('td', {
-            class: 'weekly-table__cell weekly-table__cell--project weekly-table__cell--total-label'
+            class: 'weekly-table__cell weekly-table__cell--total-label'
         });
 
-        // Ajouter les indicateurs de couleur
+        // Ajouter les divs pour "Projets" et "Présence" avec leurs indicateurs
+        const projectDiv = createElement('div', {
+            class: 'weekly-table__total-project'
+        });
         const projectIndicator = createElement('span', {
             class: 'weekly-table__color weekly-table__color--project'
         });
+        projectDiv.appendChild(projectIndicator);
+        projectDiv.appendChild(document.createTextNode(' Projets'));
 
+        const presenceDiv = createElement('div', {
+            class: 'weekly-table__total-presence'
+        });
         const presenceIndicator = createElement('span', {
             class: 'weekly-table__color weekly-table__color--presence'
         });
+        presenceDiv.appendChild(presenceIndicator);
+        presenceDiv.appendChild(document.createTextNode(' Présence'));
 
-        labelCell.appendChild(projectIndicator);
-        labelCell.appendChild(document.createTextNode(' Projets'));
-        labelCell.appendChild(document.createElement('br'));
-        labelCell.appendChild(presenceIndicator);
-        labelCell.appendChild(document.createTextNode(' Présence'));
+        labelCell.appendChild(projectDiv);
+        labelCell.appendChild(presenceDiv);
 
         row.appendChild(labelCell);
 

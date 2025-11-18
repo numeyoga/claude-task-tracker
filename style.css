@@ -1128,6 +1128,10 @@ body {
     border-bottom: 2px solid var(--color-primary-dark);
 }
 
+.weekly-table__header--project {
+    text-align: left;
+}
+
 .weekly-table__header--total {
     text-align: center;
     background-color: var(--color-primary-dark);
