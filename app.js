@@ -18,6 +18,7 @@ import { ProjectTimerUI } from './js/project-timer-ui.js';
 import { WeeklyReportCalculator } from './js/weekly-report.js';
 import { ReportsUI } from './js/reports-ui.js';
 import { EntriesManagementUI } from './js/entries-management-ui.js';
+import { SessionsManagementUI } from './js/sessions-management-ui.js';
 
 /**
  * Contrôleur principal de l'application
@@ -34,6 +35,7 @@ class App {
         this.reportCalculator = new WeeklyReportCalculator();
         this.reportsUI = new ReportsUI();
         this.entriesManagementUI = new EntriesManagementUI();
+        this.sessionsManagementUI = new SessionsManagementUI();
 
         // État
         this.todayEntries = [];
@@ -71,6 +73,7 @@ class App {
             this.timerUI.init();
             this.reportsUI.init();
             this.entriesManagementUI.init();
+            this.sessionsManagementUI.init();
 
             // Charger les données du jour
             await this.loadTodayData();
@@ -855,6 +858,17 @@ class App {
             await this.loadAllEntries();
         };
 
+        // Callbacks pour la gestion des sessions de projet
+        this.sessionsManagementUI.onRefresh = async () => {
+            await this.loadAllSessions();
+        };
+
+        this.sessionsManagementUI.onDeleteSession = async (session) => {
+            await this.deleteSession(session);
+            // Recharger les sessions après suppression
+            await this.loadAllSessions();
+        };
+
         console.log('✅ Écouteurs d\'événements de la gestion des entrées configurés');
     }
 
@@ -869,19 +883,19 @@ class App {
     }
 
     /**
-     * Ouvre la vue de gestion des entrées (période courante)
+     * Ouvre la vue de gestion des sessions de projet (période courante)
      */
     async openPeriodEntriesManagement() {
         // Définir le filtre de période
         const periodLabel = this.reportCalculator.formatDateRange(this.currentPeriodStart, this.currentPeriodEnd);
-        this.entriesManagementUI.setPeriodFilter({
+        this.sessionsManagementUI.setPeriodFilter({
             startDate: this.currentPeriodStart,
             endDate: this.currentPeriodEnd,
             label: periodLabel
         });
 
-        this.entriesManagementUI.show();
-        await this.loadAllEntries();
+        this.sessionsManagementUI.show();
+        await this.loadAllSessions();
     }
 
     /**
@@ -896,6 +910,46 @@ class App {
         } catch (error) {
             console.error('❌ Erreur lors du chargement de toutes les entrées:', error);
             this.entriesManagementUI.showError('Erreur lors du chargement des entrées');
+        }
+    }
+
+    /**
+     * Charge toutes les sessions de projet de la base de données
+     */
+    async loadAllSessions() {
+        try {
+            const allSessions = await this.storage.getAllSessions();
+
+            // Créer une Map des noms de projets
+            const projectNames = new Map();
+            this.projects.forEach(project => {
+                projectNames.set(project.id, project.name);
+            });
+
+            this.sessionsManagementUI.renderAllSessions(allSessions, projectNames);
+
+            console.log(`📋 ${allSessions.length} session(s) chargée(s) pour la gestion`);
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement de toutes les sessions:', error);
+            this.sessionsManagementUI.showError('Erreur lors du chargement des sessions');
+        }
+    }
+
+    /**
+     * Supprime une session de projet
+     * @param {ProjectSession} session - Session à supprimer
+     */
+    async deleteSession(session) {
+        try {
+            await this.storage.deleteSession(session.id);
+            console.log('✅ Session supprimée:', session.id);
+
+            // Recharger les données du jour et des rapports
+            await this.loadTodayData();
+            await this.updateReport();
+        } catch (error) {
+            console.error('❌ Erreur lors de la suppression de la session:', error);
+            alert('Erreur lors de la suppression de la session');
         }
     }
 }
