@@ -131,17 +131,108 @@ export class Popover {
 }
 
 /**
+ * Popover pour ajouter un nouveau projet
+ */
+export class AddProjectPopover extends Popover {
+    /**
+     * @param {Function} onSubmit - Callback appelé lors de la soumission (reçoit le nom du projet)
+     */
+    constructor(onSubmit) {
+        super('Ajouter un projet');
+        this.onSubmit = onSubmit;
+    }
+
+    /**
+     * Crée le formulaire d'ajout de projet
+     * @returns {HTMLElement}
+     * @private
+     */
+    #createForm() {
+        const form = createElement('form', {
+            class: 'retroactive-time-form'
+        });
+
+        // Champ nom du projet
+        const nameGroup = createElement('div', {
+            class: 'form-group'
+        });
+        const nameLabel = createElement('label', {
+            class: 'form-label',
+            for: 'new-project-name-input'
+        }, 'Nom du projet');
+        const nameInput = createElement('input', {
+            type: 'text',
+            id: 'new-project-name-input',
+            class: 'form-input',
+            placeholder: 'Nom du nouveau projet',
+            maxlength: '100',
+            required: true
+        });
+        nameGroup.appendChild(nameLabel);
+        nameGroup.appendChild(nameInput);
+
+        // Boutons d'action
+        const actionsGroup = createElement('div', {
+            class: 'form-actions'
+        });
+
+        const cancelBtn = createElement('button', {
+            type: 'button',
+            class: 'btn btn--secondary'
+        }, 'Annuler');
+        cancelBtn.addEventListener('click', () => this.close());
+
+        const submitBtn = createElement('button', {
+            type: 'submit',
+            class: 'btn btn--primary'
+        }, 'Ajouter');
+
+        actionsGroup.appendChild(cancelBtn);
+        actionsGroup.appendChild(submitBtn);
+
+        // Assembler le formulaire
+        form.appendChild(nameGroup);
+        form.appendChild(actionsGroup);
+
+        // Gérer la soumission du formulaire
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            if (name && this.onSubmit) {
+                this.onSubmit(name);
+            }
+            this.close();
+        });
+
+        // Focus automatique sur le champ de saisie
+        setTimeout(() => nameInput.focus(), 100);
+
+        return form;
+    }
+
+    /**
+     * Affiche la popover
+     */
+    show() {
+        const form = this.#createForm();
+        super.show(form);
+    }
+}
+
+/**
  * Popover pour ajouter du temps rétroactif à un projet
  */
 export class AddRetroactiveTimePopover extends Popover {
     /**
-     * @param {Project} project - Projet auquel ajouter du temps
+     * @param {Project} project - Projet auquel ajouter du temps (null pour sélectionner)
      * @param {Function} onSubmit - Callback appelé lors de la soumission (reçoit les données)
+     * @param {Project[]} projects - Liste des projets disponibles (si project est null)
      */
-    constructor(project, onSubmit) {
-        super('Ajouter du temps rétroactif');
+    constructor(project, onSubmit, projects = []) {
+        super('Ajouter du temps');
         this.project = project;
         this.onSubmit = onSubmit;
+        this.projects = projects;
     }
 
     /**
@@ -154,19 +245,48 @@ export class AddRetroactiveTimePopover extends Popover {
             class: 'retroactive-time-form'
         });
 
-        // Champ projet (lecture seule)
+        // Champ projet (sélection ou lecture seule)
         const projectGroup = createElement('div', {
             class: 'form-group'
         });
         const projectLabel = createElement('label', {
-            class: 'form-label'
+            class: 'form-label',
+            for: 'retroactive-project'
         }, 'Projet');
-        const projectInput = createElement('input', {
-            type: 'text',
-            class: 'form-input',
-            value: this.project.name,
-            readonly: true
-        });
+
+        let projectInput;
+        if (this.project) {
+            // Projet fixé (lecture seule)
+            projectInput = createElement('input', {
+                type: 'text',
+                id: 'retroactive-project',
+                class: 'form-input',
+                value: this.project.name,
+                readonly: true
+            });
+        } else {
+            // Sélection de projet
+            projectInput = createElement('select', {
+                id: 'retroactive-project',
+                class: 'form-input',
+                required: true
+            });
+
+            // Option par défaut
+            const defaultOption = createElement('option', {
+                value: ''
+            }, '-- Sélectionner un projet --');
+            projectInput.appendChild(defaultOption);
+
+            // Ajouter les projets
+            this.projects.forEach(project => {
+                const option = createElement('option', {
+                    value: project.id
+                }, project.name);
+                projectInput.appendChild(option);
+            });
+        }
+
         projectGroup.appendChild(projectLabel);
         projectGroup.appendChild(projectInput);
 
@@ -399,12 +519,194 @@ export class AddRetroactiveTimePopover extends Popover {
             }
         }
 
+        // Récupérer le projectId
+        const projectId = this.project ? this.project.id : document.getElementById('retroactive-project').value;
+
+        if (!projectId) {
+            alert('Veuillez sélectionner un projet.');
+            return;
+        }
+
         // Préparer les données
         const data = {
-            projectId: this.project.id,
+            projectId: projectId,
             startTime: startDateTime,
             endTime: endDateTime,
             date: date
+        };
+
+        // Appeler le callback
+        if (this.onSubmit) {
+            this.onSubmit(data);
+        }
+
+        // Fermer la popover
+        this.close();
+    }
+
+    /**
+     * Affiche la popover
+     */
+    show() {
+        const form = this.#createForm();
+        super.show(form);
+    }
+}
+
+/**
+ * Popover pour éditer une session de projet
+ */
+export class EditSessionPopover extends Popover {
+    /**
+     * @param {ProjectSession} session - Session à éditer
+     * @param {string} projectName - Nom du projet
+     * @param {Function} onSubmit - Callback appelé lors de la soumission (reçoit les données)
+     */
+    constructor(session, projectName, onSubmit) {
+        super('Modifier la session');
+        this.session = session;
+        this.projectName = projectName;
+        this.onSubmit = onSubmit;
+    }
+
+    /**
+     * Crée le formulaire d'édition de session
+     * @returns {HTMLElement}
+     * @private
+     */
+    #createForm() {
+        const form = createElement('form', {
+            class: 'retroactive-time-form'
+        });
+
+        // Champ projet (lecture seule)
+        const projectGroup = createElement('div', {
+            class: 'form-group'
+        });
+        const projectLabel = createElement('label', {
+            class: 'form-label'
+        }, 'Projet');
+        const projectInput = createElement('input', {
+            type: 'text',
+            class: 'form-input',
+            value: this.projectName,
+            readonly: true
+        });
+        projectGroup.appendChild(projectLabel);
+        projectGroup.appendChild(projectInput);
+
+        // Champ date (lecture seule)
+        const dateGroup = createElement('div', {
+            class: 'form-group'
+        });
+        const dateLabel = createElement('label', {
+            class: 'form-label'
+        }, 'Date');
+        const dateString = this.session.startTime.toISOString().split('T')[0];
+        const dateInput = createElement('input', {
+            type: 'text',
+            class: 'form-input',
+            value: dateString,
+            readonly: true
+        });
+        dateGroup.appendChild(dateLabel);
+        dateGroup.appendChild(dateInput);
+
+        // Champ heure de début
+        const startTimeGroup = createElement('div', {
+            class: 'form-group'
+        });
+        const startTimeLabel = createElement('label', {
+            class: 'form-label',
+            for: 'edit-session-start-time'
+        }, 'Heure de début');
+        const startTimeValue = this.session.startTime.toTimeString().substring(0, 5);
+        const startTimeInput = createElement('input', {
+            type: 'time',
+            id: 'edit-session-start-time',
+            class: 'form-input',
+            value: startTimeValue,
+            required: true
+        });
+        startTimeGroup.appendChild(startTimeLabel);
+        startTimeGroup.appendChild(startTimeInput);
+
+        // Champ heure de fin
+        const endTimeGroup = createElement('div', {
+            class: 'form-group'
+        });
+        const endTimeLabel = createElement('label', {
+            class: 'form-label',
+            for: 'edit-session-end-time'
+        }, 'Heure de fin');
+        const endTimeValue = this.session.endTime ? this.session.endTime.toTimeString().substring(0, 5) : '';
+        const endTimeInput = createElement('input', {
+            type: 'time',
+            id: 'edit-session-end-time',
+            class: 'form-input',
+            value: endTimeValue,
+            required: !this.session.endTime ? false : true
+        });
+        endTimeGroup.appendChild(endTimeLabel);
+        endTimeGroup.appendChild(endTimeInput);
+
+        // Boutons d'action
+        const actionsGroup = createElement('div', {
+            class: 'form-actions'
+        });
+
+        const cancelBtn = createElement('button', {
+            type: 'button',
+            class: 'btn btn--secondary'
+        }, 'Annuler');
+        cancelBtn.addEventListener('click', () => this.close());
+
+        const submitBtn = createElement('button', {
+            type: 'submit',
+            class: 'btn btn--primary'
+        }, 'Modifier');
+
+        actionsGroup.appendChild(cancelBtn);
+        actionsGroup.appendChild(submitBtn);
+
+        // Assembler le formulaire
+        form.appendChild(projectGroup);
+        form.appendChild(dateGroup);
+        form.appendChild(startTimeGroup);
+        form.appendChild(endTimeGroup);
+        form.appendChild(actionsGroup);
+
+        // Gérer la soumission du formulaire
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.#handleSubmit(startTimeInput, endTimeInput, dateString);
+        });
+
+        return form;
+    }
+
+    /**
+     * Gère la soumission du formulaire
+     * @private
+     */
+    #handleSubmit(startTimeInput, endTimeInput, date) {
+        const startTime = startTimeInput.value;
+        const endTime = endTimeInput.value;
+
+        // Construire les dates/heures
+        const startDateTime = new Date(`${date}T${startTime}`);
+        const endDateTime = endTime ? new Date(`${date}T${endTime}`) : null;
+
+        if (endDateTime && endDateTime <= startDateTime) {
+            alert('L\'heure de fin doit être après l\'heure de début.');
+            return;
+        }
+
+        // Préparer les données
+        const data = {
+            sessionId: this.session.id,
+            startTime: startDateTime,
+            endTime: endDateTime
         };
 
         // Appeler le callback
