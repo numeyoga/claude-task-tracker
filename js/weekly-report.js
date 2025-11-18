@@ -186,6 +186,15 @@ export class WeeklyReportCalculator {
             const percentage = totalTime > 0 ? Math.round((duration / totalTime) * 100) : 0;
             const sessionCount = projectSessions.length;
 
+            // Calculer les durées quotidiennes
+            const dailyDurations = {};
+            projectSessions.forEach(session => {
+                if (!dailyDurations[session.date]) {
+                    dailyDurations[session.date] = 0;
+                }
+                dailyDurations[session.date] += session.getDuration();
+            });
+
             return {
                 projectId,
                 projectName: project ? project.name : 'Projet inconnu',
@@ -193,7 +202,8 @@ export class WeeklyReportCalculator {
                 duration,
                 percentage,
                 sessionCount,
-                averageSessionDuration: sessionCount > 0 ? duration / sessionCount : 0
+                averageSessionDuration: sessionCount > 0 ? duration / sessionCount : 0,
+                dailyDurations
             };
         });
 

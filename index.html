@@ -9,8 +9,15 @@
 <body>
     <!-- En-tête -->
     <header class="header">
-        <h1 class="header__title">Claude Time Tracker</h1>
-        <p class="header__subtitle">Suivi de votre temps de présence</p>
+        <div class="header__content">
+            <div class="header__text">
+                <h1 class="header__title">Claude Time Tracker</h1>
+                <p class="header__subtitle">Suivi de votre temps de présence</p>
+            </div>
+            <button id="manage-entries-btn" class="header__manage-btn" title="Gérer toutes les entrées">
+                📋 Gérer les entrées
+            </button>
+        </div>
     </header>
 
     <!-- Barre de présence journalière compacte avec pointages intégrés -->
@@ -88,7 +95,12 @@
 
             <!-- Gestion des projets -->
             <section class="projects-section">
-                <h2 class="projects-section__title">Projets</h2>
+                <div class="projects-section__header">
+                    <h2 class="projects-section__title">Projets</h2>
+                    <button id="add-manual-time-btn" class="projects-section__btn-manual-time" title="Ajouter du temps manuel">
+                        ⏰ Ajouter du temps
+                    </button>
+                </div>
 
                 <!-- Boutons d'action -->
                 <div class="projects-section__actions">
@@ -125,7 +137,12 @@
         <div class="reports-section__container">
             <!-- En-tête avec sélection de période -->
             <div class="reports-section__header">
-                <h2 class="reports-section__title">Rapports et Statistiques</h2>
+                <div class="reports-section__title-row">
+                    <h2 class="reports-section__title">Rapports et Statistiques</h2>
+                    <button id="manage-period-entries-btn" class="reports-section__manage-btn" title="Gérer les entrées de cette période">
+                        📋 Gérer les entrées de la période
+                    </button>
+                </div>
 
                 <div class="reports-section__controls">
                     <!-- Sélecteur de type de période -->
@@ -175,58 +192,36 @@
                     <div class="report-summary__label">Jours travaillés</div>
                     <div id="report-worked-days" class="report-summary__value">0</div>
                 </div>
-                <div class="report-summary__card report-summary__card--warning">
-                    <div class="report-summary__label">Jours incomplets</div>
-                    <div id="report-incomplete-days" class="report-summary__value">0</div>
-                </div>
             </div>
 
-            <!-- Deux colonnes: Projets et Jours incomplets -->
-            <div class="report-content">
-                <!-- Colonne gauche: Temps par projet -->
-                <div class="report-content__left">
-                    <div class="report-projects">
-                        <h3 class="report-projects__title">Temps par projet</h3>
-                        <div id="report-projects-list" class="report-projects__list">
-                            <p class="report-projects__empty">Aucune donnée pour cette période</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Tableau hebdomadaire -->
+            <div class="weekly-table-container">
+                <table id="weekly-table" class="weekly-table">
+                    <!-- Le tableau sera généré dynamiquement -->
+                </table>
+            </div>
+        </div>
+    </section>
 
-                <!-- Colonne droite: Jours incomplets et export -->
-                <div class="report-content__right">
-                    <!-- Jours incomplets -->
-                    <div class="incomplete-days">
-                        <h3 class="incomplete-days__title">Jours incomplets (&lt;8h)</h3>
-                        <div id="incomplete-days-list" class="incomplete-days__list">
-                            <p class="incomplete-days__empty">Aucun jour incomplet</p>
-                        </div>
-                    </div>
-
-                    <!-- Export -->
-                    <div class="report-export">
-                        <h3 class="report-export__title">Exporter les données</h3>
-                        <div class="report-export__buttons">
-                            <button id="export-report-csv-btn" class="report-export__btn">
-                                📊 Rapport CSV
-                            </button>
-                            <button id="export-report-json-btn" class="report-export__btn">
-                                📄 Rapport JSON
-                            </button>
-                            <button id="export-all-data-btn" class="report-export__btn">
-                                💾 Tout exporter
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    <!-- Section Gestion des Entrées -->
+    <section class="entries-management-section" id="entries-management-section">
+        <div class="entries-management-section__container">
+            <!-- En-tête avec bouton de fermeture -->
+            <div class="entries-management-section__header">
+                <h2 class="entries-management-section__title">Gestion des Entrées</h2>
+                <button id="close-entries-management-btn" class="entries-management-section__close-btn" title="Fermer">
+                    ✕
+                </button>
             </div>
 
-            <!-- Graphique quotidien -->
-            <div class="daily-chart">
-                <h3 class="daily-chart__title">Temps de présence quotidien</h3>
-                <div id="daily-chart-container" class="daily-chart__container">
-                    <p class="daily-chart__empty">Aucune donnée à afficher</p>
-                </div>
+            <!-- Message d'information -->
+            <div class="entries-management-section__info">
+                <p>Toutes vos entrées de pointage dans l'ordre antéchronologique (du plus récent au plus ancien).</p>
+            </div>
+
+            <!-- Liste des entrées -->
+            <div id="all-entries-list" class="all-entries-list">
+                <div class="all-entries-list__empty">Chargement...</div>
             </div>
         </div>
     </section>

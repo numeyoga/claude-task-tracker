@@ -16,8 +16,9 @@ import { ProjectsUI } from './js/projects-ui.js';
 import { ProjectTimer } from './js/timer.js';
 import { ProjectTimerUI } from './js/project-timer-ui.js';
 import { WeeklyReportCalculator } from './js/weekly-report.js';
-import { DataExporter, ExportFormat, ExportType } from './js/data-export.js';
 import { ReportsUI } from './js/reports-ui.js';
+import { EntriesManagementUI } from './js/entries-management-ui.js';
+import { SessionsManagementUI } from './js/sessions-management-ui.js';
 
 /**
  * Contrôleur principal de l'application
@@ -32,8 +33,9 @@ class App {
         this.timer = null; // Initialisé après storage
         this.timerUI = new ProjectTimerUI();
         this.reportCalculator = new WeeklyReportCalculator();
-        this.dataExporter = new DataExporter();
         this.reportsUI = new ReportsUI();
+        this.entriesManagementUI = new EntriesManagementUI();
+        this.sessionsManagementUI = new SessionsManagementUI();
 
         // État
         this.todayEntries = [];
@@ -70,6 +72,8 @@ class App {
             this.projectsUI.init();
             this.timerUI.init();
             this.reportsUI.init();
+            this.entriesManagementUI.init();
+            this.sessionsManagementUI.init();
 
             // Charger les données du jour
             await this.loadTodayData();
@@ -88,6 +92,7 @@ class App {
             this.setupProjectsEventListeners();
             this.setupTimerEventListeners();
             this.setupReportsEventListeners();
+            this.setupEntriesManagementEventListeners();
 
             // Démarrer la mise à jour en temps réel
             this.startRealtimeUpdate();
@@ -400,34 +405,6 @@ class App {
     }
 
     /**
-     * Met à jour le temps d'un projet
-     * @param {string} projectId - ID du projet
-     * @param {number} timeSpent - Nouveau temps en millisecondes
-     */
-    async updateProjectTime(projectId, timeSpent) {
-        try {
-            const project = this.projects.find(p => p.id === projectId);
-            if (!project) {
-                throw new Error('Projet non trouvé');
-            }
-
-            project.updateTimeSpent(timeSpent);
-
-            await this.storage.saveProject(project);
-
-            // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
-
-            this.projectsUI.showSuccess(`Temps du projet modifié`);
-
-            console.log('✅ Temps du projet modifié:', projectId);
-        } catch (error) {
-            console.error('❌ Erreur lors de la modification du temps:', error);
-            this.projectsUI.showError('Erreur lors de la modification du temps');
-        }
-    }
-
-    /**
      * Supprime un projet
      * @param {string} projectId - ID du projet à supprimer
      */
@@ -722,11 +699,6 @@ class App {
             this.updateProjectName(projectId, newName);
         };
 
-        // Modification du temps
-        this.projectsUI.onUpdateTime = (projectId, timeSpent) => {
-            this.updateProjectTime(projectId, timeSpent);
-        };
-
         // Suppression
         this.projectsUI.onDeleteProject = (projectId) => {
             this.deleteProject(projectId);
@@ -862,14 +834,8 @@ class App {
         // Mettre à jour les statistiques globales
         this.reportsUI.updateSummary(this.currentReport);
 
-        // Afficher les statistiques par projet
-        this.reportsUI.renderProjectStats(this.currentReport.projectStats);
-
-        // Afficher les jours incomplets
-        this.reportsUI.renderIncompleteDays(this.currentReport.incompleteDaysList);
-
-        // Afficher le graphique quotidien
-        this.reportsUI.renderDailyChart(this.currentReport.dailyStats);
+        // Afficher le tableau hebdomadaire
+        this.reportsUI.renderWeeklyTable(this.currentReport, this.currentPeriodType);
 
         // Mettre à jour le bouton actif
         this.reportsUI.setActivePeriod(this.currentPeriodType);
@@ -905,85 +871,6 @@ class App {
     }
 
     /**
-     * Exporte le rapport en CSV
-     */
-    async exportReportCSV() {
-        try {
-            if (!this.currentReport) {
-                this.reportsUI.showError('Aucun rapport à exporter');
-                return;
-            }
-
-            this.dataExporter.exportAndDownload({
-                type: ExportType.WEEKLY_REPORT,
-                format: ExportFormat.CSV,
-                data: { report: this.currentReport }
-            });
-
-            this.reportsUI.showSuccess('Rapport exporté en CSV');
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'export CSV:', error);
-            this.reportsUI.showError('Erreur lors de l\'export CSV');
-        }
-    }
-
-    /**
-     * Exporte le rapport en JSON
-     */
-    async exportReportJSON() {
-        try {
-            if (!this.currentReport) {
-                this.reportsUI.showError('Aucun rapport à exporter');
-                return;
-            }
-
-            this.dataExporter.exportAndDownload({
-                type: ExportType.WEEKLY_REPORT,
-                format: ExportFormat.JSON,
-                data: { report: this.currentReport }
-            });
-
-            this.reportsUI.showSuccess('Rapport exporté en JSON');
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'export JSON:', error);
-            this.reportsUI.showError('Erreur lors de l\'export JSON');
-        }
-    }
-
-    /**
-     * Exporte toutes les données de l'application
-     */
-    async exportAllData() {
-        try {
-            // Charger toutes les données
-            const allEntries = await this.storage.getAllEntries();
-            const allSessions = await this.storage.getAllProjects();
-
-            // Récupérer toutes les sessions
-            const allProjectSessions = [];
-            for (const project of this.projects) {
-                const sessions = await this.storage.getSessionsByProject(project.id);
-                allProjectSessions.push(...sessions);
-            }
-
-            this.dataExporter.exportAndDownload({
-                type: ExportType.ALL_DATA,
-                format: ExportFormat.JSON,
-                data: {
-                    entries: allEntries,
-                    projects: this.projects,
-                    sessions: allProjectSessions
-                }
-            });
-
-            this.reportsUI.showSuccess('Toutes les données exportées');
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'export de toutes les données:', error);
-            this.reportsUI.showError('Erreur lors de l\'export de toutes les données');
-        }
-    }
-
-    /**
      * Configure les écouteurs d'événements pour les rapports
      */
     setupReportsEventListeners() {
@@ -997,20 +884,143 @@ class App {
             this.navigatePeriod(direction);
         };
 
-        // Export des rapports
-        this.reportsUI.onExportReportCSV = () => {
-            this.exportReportCSV();
-        };
-
-        this.reportsUI.onExportReportJSON = () => {
-            this.exportReportJSON();
-        };
-
-        this.reportsUI.onExportAllData = () => {
-            this.exportAllData();
-        };
-
         console.log('✅ Écouteurs d\'événements des rapports configurés');
+    }
+
+    // ======================
+    // Gestion des entrées (toutes)
+    // ======================
+
+    /**
+     * Configure les écouteurs d'événements pour la gestion des entrées
+     */
+    setupEntriesManagementEventListeners() {
+        // Bouton pour ouvrir la vue de gestion (toutes les entrées)
+        const manageEntriesBtn = document.getElementById('manage-entries-btn');
+        if (manageEntriesBtn) {
+            manageEntriesBtn.addEventListener('click', () => {
+                this.openEntriesManagement();
+            });
+        }
+
+        // Bouton pour ouvrir la vue de gestion (entrées de la période)
+        const managePeriodEntriesBtn = document.getElementById('manage-period-entries-btn');
+        if (managePeriodEntriesBtn) {
+            managePeriodEntriesBtn.addEventListener('click', () => {
+                this.openPeriodEntriesManagement();
+            });
+        }
+
+        // Rafraîchir les entrées
+        this.entriesManagementUI.onRefresh = async () => {
+            await this.loadAllEntries();
+        };
+
+        // Modifier une entrée
+        this.entriesManagementUI.onEditEntry = (entry) => {
+            this.editEntry(entry);
+        };
+
+        // Supprimer une entrée
+        this.entriesManagementUI.onDeleteEntry = async (entry) => {
+            await this.deleteEntry(entry);
+            // Recharger les entrées après suppression
+            await this.loadAllEntries();
+        };
+
+        // Callbacks pour la gestion des sessions de projet
+        this.sessionsManagementUI.onRefresh = async () => {
+            await this.loadAllSessions();
+        };
+
+        this.sessionsManagementUI.onDeleteSession = async (session) => {
+            await this.deleteSession(session);
+            // Recharger les sessions après suppression
+            await this.loadAllSessions();
+        };
+
+        console.log('✅ Écouteurs d\'événements de la gestion des entrées configurés');
+    }
+
+    /**
+     * Ouvre la vue de gestion des entrées (toutes)
+     */
+    async openEntriesManagement() {
+        // Réinitialiser le filtre
+        this.entriesManagementUI.clearPeriodFilter();
+        this.entriesManagementUI.show();
+        await this.loadAllEntries();
+    }
+
+    /**
+     * Ouvre la vue de gestion des sessions de projet (période courante)
+     */
+    async openPeriodEntriesManagement() {
+        // Définir le filtre de période
+        const periodLabel = this.reportCalculator.formatDateRange(this.currentPeriodStart, this.currentPeriodEnd);
+        this.sessionsManagementUI.setPeriodFilter({
+            startDate: this.currentPeriodStart,
+            endDate: this.currentPeriodEnd,
+            label: periodLabel
+        });
+
+        this.sessionsManagementUI.show();
+        await this.loadAllSessions();
+    }
+
+    /**
+     * Charge toutes les entrées de la base de données
+     */
+    async loadAllEntries() {
+        try {
+            const allEntries = await this.storage.getAllEntries();
+            this.entriesManagementUI.renderAllEntries(allEntries);
+
+            console.log(`📋 ${allEntries.length} entrée(s) chargée(s) pour la gestion`);
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement de toutes les entrées:', error);
+            this.entriesManagementUI.showError('Erreur lors du chargement des entrées');
+        }
+    }
+
+    /**
+     * Charge toutes les sessions de projet de la base de données
+     */
+    async loadAllSessions() {
+        try {
+            const allSessions = await this.storage.getAllSessions();
+
+            // Créer une Map des noms de projets
+            const projectNames = new Map();
+            this.projects.forEach(project => {
+                projectNames.set(project.id, project.name);
+            });
+
+            this.sessionsManagementUI.renderAllSessions(allSessions, projectNames);
+
+            console.log(`📋 ${allSessions.length} session(s) chargée(s) pour la gestion`);
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement de toutes les sessions:', error);
+            this.sessionsManagementUI.showError('Erreur lors du chargement des sessions');
+        }
+    }
+
+    /**
+     * Supprime une session de projet
+     * @param {ProjectSession} session - Session à supprimer
+     */
+    async deleteSession(session) {
+        try {
+            await this.storage.deleteSession(session.id);
+            console.log('✅ Session supprimée:', session.id);
+
+            // Recharger les données du jour et des rapports
+            await this.loadTodayData();
+            await this.updateReport();
+        } catch (error) {
+            console.error('❌ Erreur lors de la suppression de la session:', error);
+            alert('Erreur lors de la suppression de la session');
+        }
     }
 }
 

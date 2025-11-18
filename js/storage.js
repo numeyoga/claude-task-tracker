@@ -563,4 +563,31 @@ export class StorageService {
             };
         });
     }
+
+    /**
+     * Récupère toutes les sessions de projet
+     * @returns {Promise<ProjectSession[]>} Liste de toutes les sessions
+     * @throws {Error} Si la récupération échoue
+     */
+    async getAllSessions() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readonly');
+            const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
+
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const sessions = request.result.map(data => ProjectSession.fromJSON(data));
+
+                // Trier par date de début (plus récent en premier)
+                sessions.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+
+                resolve(sessions);
+            };
+
+            request.onerror = () => {
+                reject(new Error('Erreur lors de la récupération de toutes les sessions'));
+            };
+        });
+    }
 }
