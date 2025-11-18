@@ -982,9 +982,11 @@ class App {
         };
 
         this.sessionsManagementUI.onDeleteSession = async (session) => {
-            await this.deleteSession(session);
+            await this.deleteSession(session.id);
             // Recharger les sessions après suppression
             await this.loadAllSessions();
+            // Recharger le rapport pour mettre à jour les statistiques
+            await this.loadCurrentReport();
         };
 
         console.log('✅ Écouteurs d\'événements de la gestion des entrées configurés');
@@ -1053,23 +1055,6 @@ class App {
         }
     }
 
-    /**
-     * Supprime une session de projet
-     * @param {ProjectSession} session - Session à supprimer
-     */
-    async deleteSession(session) {
-        try {
-            await this.storage.deleteSession(session.id);
-            console.log('✅ Session supprimée:', session.id);
-
-            // Recharger les données du jour et des rapports
-            await this.loadTodayData();
-            await this.updateReport();
-        } catch (error) {
-            console.error('❌ Erreur lors de la suppression de la session:', error);
-            alert('Erreur lors de la suppression de la session');
-        }
-    }
 }
 
 // Démarrage de l'application au chargement du DOM
