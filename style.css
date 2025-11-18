@@ -545,29 +545,6 @@ body {
     margin: 0;
 }
 
-.projects-section__btn-manual-time {
-    padding: var(--spacing-sm) var(--spacing-md);
-    background-color: var(--color-secondary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.projects-section__btn-manual-time:hover {
-    background-color: #2980b9;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-.projects-section__btn-manual-time:active {
-    transform: translateY(0);
-}
-
 .projects-section__actions {
     display: flex;
     gap: var(--spacing-md);
@@ -861,7 +838,10 @@ body {
     gap: var(--spacing-md);
 }
 
-.reports-section__manage-btn {
+/* Style commun pour tous les boutons de gestion */
+.manage-btn,
+.reports-section__manage-btn,
+.header__manage-btn {
     padding: var(--spacing-sm) var(--spacing-lg);
     background-color: var(--color-primary);
     color: white;
@@ -874,13 +854,17 @@ body {
     white-space: nowrap;
 }
 
-.reports-section__manage-btn:hover {
+.manage-btn:hover,
+.reports-section__manage-btn:hover,
+.header__manage-btn:hover {
     background-color: var(--color-primary-dark);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
 
-.reports-section__manage-btn:active {
+.manage-btn:active,
+.reports-section__manage-btn:active,
+.header__manage-btn:active {
     transform: translateY(0);
 }
 
@@ -1701,28 +1685,7 @@ input[type="radio"] {
     flex: 1;
 }
 
-.header__manage-btn {
-    padding: var(--spacing-sm) var(--spacing-lg);
-    background-color: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.header__manage-btn:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-.header__manage-btn:active {
-    transform: translateY(0);
-}
+/* Les styles header__manage-btn sont maintenant définis avec manage-btn au-dessus */
 
 /* Section de gestion des entrées (overlay plein écran) */
 .entries-management-section {
