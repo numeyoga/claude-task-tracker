@@ -179,7 +179,7 @@ class App {
             this.todayEntries.push(entry);
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             // Afficher un message de succès
             const labels = {
@@ -235,7 +235,7 @@ class App {
             await this.loadTodayData();
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.ui.showSuccess('Pointage modifié');
 
@@ -262,7 +262,7 @@ class App {
             this.todayEntries = this.todayEntries.filter(e => e.id !== entry.id);
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.ui.showSuccess('Pointage supprimé');
 
@@ -305,7 +305,7 @@ class App {
      * Met à jour TOUS les affichages de l'application
      * Cette méthode doit être appelée à chaque modification de temps
      */
-    updateAllDisplays() {
+    async updateAllDisplays() {
         // Mettre à jour l'UI principale (temps de présence et pointages)
         this.updateUI();
 
@@ -317,6 +317,9 @@ class App {
 
         // Si le modal est ouvert, le rafraîchir
         this.refreshModalIfOpen();
+
+        // Rafraîchir le rapport hebdomadaire pour refléter les changements immédiatement
+        await this.loadCurrentReport();
     }
 
     /**
@@ -366,7 +369,7 @@ class App {
             this.projects.unshift(project);
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.projectsUI.showSuccess(`Projet "${name}" ajouté avec succès`);
 
@@ -394,7 +397,7 @@ class App {
             await this.storage.saveProject(project);
 
             // Mettre à jour TOUS les affichages (important si le modal est ouvert)
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.projectsUI.showSuccess(`Nom du projet modifié`);
 
@@ -417,7 +420,7 @@ class App {
             this.projects = this.projects.filter(p => p.id !== projectId);
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.projectsUI.showSuccess('Projet supprimé');
 
@@ -465,7 +468,7 @@ class App {
             }
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.projectsUI.showSuccess(`Temps ajouté au projet "${project.name}"`);
 
@@ -497,7 +500,7 @@ class App {
 
             // Recharger les sessions et mettre à jour TOUS les affichages
             await this.loadTodaySessions();
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             console.log('✅ Chronomètre démarré pour le projet:', projectId);
         } catch (error) {
@@ -516,7 +519,7 @@ class App {
             if (session) {
                 // Recharger les sessions et mettre à jour TOUS les affichages
                 await this.loadTodaySessions();
-                this.updateAllDisplays();
+                await this.updateAllDisplays();
 
                 this.timerUI.showSuccess('Chronomètre arrêté');
 
@@ -585,7 +588,7 @@ class App {
             await this.loadTodaySessions();
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.timerUI.showSuccess('Session modifiée');
 
@@ -652,7 +655,7 @@ class App {
             this.todaySessions = this.todaySessions.filter(s => s.id !== sessionId);
 
             // Mettre à jour TOUS les affichages
-            this.updateAllDisplays();
+            await this.updateAllDisplays();
 
             this.timerUI.showSuccess('Session supprimée');
 
