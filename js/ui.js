@@ -12,6 +12,8 @@ export class TimeTrackerUI {
         // Cache des éléments DOM
         this.elements = {
             clockInBtn: null,
+            breakStartBtn: null,
+            breakEndBtn: null,
             lunchStartBtn: null,
             lunchEndBtn: null,
             clockOutBtn: null,
@@ -32,6 +34,8 @@ export class TimeTrackerUI {
      */
     init() {
         this.elements.clockInBtn = document.getElementById('clock-in-btn');
+        this.elements.breakStartBtn = document.getElementById('break-start-btn');
+        this.elements.breakEndBtn = document.getElementById('break-end-btn');
         this.elements.lunchStartBtn = document.getElementById('lunch-start-btn');
         this.elements.lunchEndBtn = document.getElementById('lunch-end-btn');
         this.elements.clockOutBtn = document.getElementById('clock-out-btn');
@@ -49,12 +53,21 @@ export class TimeTrackerUI {
     // ======================
 
     /**
-     * Met à jour l'état des boutons en fonction du prochain pointage attendu
-     * @param {string|null} nextExpectedEntry - Type du prochain pointage ou null
+     * Met à jour l'état des boutons en fonction des boutons à activer
+     * @param {string[]|string|null} enabledButtons - Liste des types de pointages à activer, ou type unique pour compatibilité
      */
-    updateButtons(nextExpectedEntry) {
+    updateButtons(enabledButtons) {
+        // Compatibilité : si c'est une string, la convertir en tableau
+        if (typeof enabledButtons === 'string') {
+            enabledButtons = [enabledButtons];
+        } else if (enabledButtons === null) {
+            enabledButtons = [];
+        }
+
         const buttons = {
             [ENTRY_TYPES.CLOCK_IN]: this.elements.clockInBtn,
+            [ENTRY_TYPES.BREAK_START]: this.elements.breakStartBtn,
+            [ENTRY_TYPES.BREAK_END]: this.elements.breakEndBtn,
             [ENTRY_TYPES.LUNCH_START]: this.elements.lunchStartBtn,
             [ENTRY_TYPES.LUNCH_END]: this.elements.lunchEndBtn,
             [ENTRY_TYPES.CLOCK_OUT]: this.elements.clockOutBtn
@@ -68,11 +81,13 @@ export class TimeTrackerUI {
             }
         });
 
-        // Activer le bouton approprié
-        if (nextExpectedEntry && buttons[nextExpectedEntry]) {
-            buttons[nextExpectedEntry].disabled = false;
-            buttons[nextExpectedEntry].classList.add('presence-btn--active');
-        }
+        // Activer les boutons appropriés
+        enabledButtons.forEach(entryType => {
+            if (buttons[entryType]) {
+                buttons[entryType].disabled = false;
+                buttons[entryType].classList.add('presence-btn--active');
+            }
+        });
     }
 
     /**
@@ -83,6 +98,8 @@ export class TimeTrackerUI {
     onButtonClick(entryType, callback) {
         const buttons = {
             [ENTRY_TYPES.CLOCK_IN]: this.elements.clockInBtn,
+            [ENTRY_TYPES.BREAK_START]: this.elements.breakStartBtn,
+            [ENTRY_TYPES.BREAK_END]: this.elements.breakEndBtn,
             [ENTRY_TYPES.LUNCH_START]: this.elements.lunchStartBtn,
             [ENTRY_TYPES.LUNCH_END]: this.elements.lunchEndBtn,
             [ENTRY_TYPES.CLOCK_OUT]: this.elements.clockOutBtn
