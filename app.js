@@ -6,7 +6,7 @@
 'use strict';
 
 import { StorageService } from './js/storage.js';
-import { TimeEntry, ENTRY_TYPES } from './js/time-entry.js';
+import { TimeEntry, ENTRY_TYPES, isBreakStart } from './js/time-entry.js';
 import { TimeCalculator } from './js/calculator.js';
 import { TimeTrackerUI } from './js/ui.js';
 import { getTodayDateString } from './js/utils.js';
@@ -169,6 +169,13 @@ class App {
      */
     async recordEntry(entryType) {
         try {
+            // Si on démarre une pause, arrêter le timer de projet en cours
+            if (isBreakStart(entryType) && this.timer.isRunning()) {
+                console.log('⏸️ Arrêt automatique du timer de projet lors de la pause');
+                await this.timer.stop();
+                await this.updateProjectsDisplay();
+            }
+
             // Créer l'entrée
             const entry = new TimeEntry(entryType);
 
@@ -184,6 +191,8 @@ class App {
             // Afficher un message de succès
             const labels = {
                 [ENTRY_TYPES.CLOCK_IN]: 'Arrivée enregistrée',
+                [ENTRY_TYPES.BREAK_START]: 'Début de pause enregistré',
+                [ENTRY_TYPES.BREAK_END]: 'Fin de pause enregistrée',
                 [ENTRY_TYPES.LUNCH_START]: 'Début de pause enregistré',
                 [ENTRY_TYPES.LUNCH_END]: 'Fin de pause enregistrée',
                 [ENTRY_TYPES.CLOCK_OUT]: 'Départ enregistré'
@@ -293,9 +302,9 @@ class App {
         const dayStatus = this.calculator.getDayStatus(this.todayEntries);
         this.ui.updateDayStatus(dayStatus);
 
-        // Déterminer le prochain pointage attendu
-        const nextEntry = this.calculator.getNextExpectedEntry(this.todayEntries);
-        this.ui.updateButtons(nextEntry);
+        // Déterminer les boutons à activer (support multi-pauses)
+        const enabledButtons = this.calculator.getEnabledButtons(this.todayEntries);
+        this.ui.updateButtons(enabledButtons);
 
         // Afficher la liste des pointages
         this.ui.renderEntries(this.todayEntries);
@@ -692,12 +701,20 @@ class App {
             this.recordEntry(ENTRY_TYPES.CLOCK_IN);
         });
 
-        // Bouton Début pause
+        // Boutons Pause (nouveaux types génériques)
+        this.ui.onButtonClick(ENTRY_TYPES.BREAK_START, () => {
+            this.recordEntry(ENTRY_TYPES.BREAK_START);
+        });
+
+        this.ui.onButtonClick(ENTRY_TYPES.BREAK_END, () => {
+            this.recordEntry(ENTRY_TYPES.BREAK_END);
+        });
+
+        // Boutons Pause (anciens types pour compatibilité)
         this.ui.onButtonClick(ENTRY_TYPES.LUNCH_START, () => {
             this.recordEntry(ENTRY_TYPES.LUNCH_START);
         });
 
-        // Bouton Fin pause
         this.ui.onButtonClick(ENTRY_TYPES.LUNCH_END, () => {
             this.recordEntry(ENTRY_TYPES.LUNCH_END);
         });

@@ -65,14 +65,16 @@ export function getTodayDateString() {
 
 /**
  * Convertit un type de pointage en libellé français
- * @param {string} type - Type de pointage (clock-in, lunch-start, lunch-end, clock-out)
+ * @param {string} type - Type de pointage (clock-in, break-start, break-end, clock-out)
  * @returns {string} Libellé en français
  */
 export function getEntryTypeLabel(type) {
     const labels = {
         'clock-in': 'Arrivée',
-        'lunch-start': 'Début pause',
-        'lunch-end': 'Fin pause',
+        'break-start': 'Début pause',
+        'break-end': 'Fin pause',
+        'lunch-start': 'Début pause', // Compatibilité
+        'lunch-end': 'Fin pause', // Compatibilité
         'clock-out': 'Départ'
     };
 

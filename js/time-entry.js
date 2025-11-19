@@ -7,10 +7,31 @@ import { formatDate } from './utils.js';
  */
 export const ENTRY_TYPES = {
     CLOCK_IN: 'clock-in',
+    BREAK_START: 'break-start',
+    BREAK_END: 'break-end',
+    // Anciens types gardés pour compatibilité
     LUNCH_START: 'lunch-start',
     LUNCH_END: 'lunch-end',
     CLOCK_OUT: 'clock-out'
 };
+
+/**
+ * Vérifie si un type correspond à un début de pause
+ * @param {string} type - Type de pointage
+ * @returns {boolean}
+ */
+export function isBreakStart(type) {
+    return type === ENTRY_TYPES.BREAK_START || type === ENTRY_TYPES.LUNCH_START;
+}
+
+/**
+ * Vérifie si un type correspond à une fin de pause
+ * @param {string} type - Type de pointage
+ * @returns {boolean}
+ */
+export function isBreakEnd(type) {
+    return type === ENTRY_TYPES.BREAK_END || type === ENTRY_TYPES.LUNCH_END;
+}
 
 /**
  * Classe représentant un pointage (arrivée, pause, départ)

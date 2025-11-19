@@ -1,6 +1,6 @@
 'use strict';
 
-import { ENTRY_TYPES } from './time-entry.js';
+import { ENTRY_TYPES, isBreakStart, isBreakEnd } from './time-entry.js';
 
 /**
  * Constantes pour les calculs
@@ -26,7 +26,7 @@ export const DayStatus = {
 export class TimeCalculator {
     /**
      * Calcule le temps de présence à partir des pointages
-     * Formule: (lunch-start - clock-in) + (clock-out - lunch-end)
+     * Formule: temps total - somme de toutes les pauses
      * @param {TimeEntry[]} entries - Liste des pointages du jour (triés par timestamp)
      * @returns {number} Durée en millisecondes
      * @throws {Error} Si les pointages sont incomplets ou invalides
@@ -36,43 +36,69 @@ export class TimeCalculator {
             return 0;
         }
 
-        // Récupérer les pointages par type
         const clockIn = entries.find(e => e.type === ENTRY_TYPES.CLOCK_IN);
-        const lunchStart = entries.find(e => e.type === ENTRY_TYPES.LUNCH_START);
-        const lunchEnd = entries.find(e => e.type === ENTRY_TYPES.LUNCH_END);
         const clockOut = entries.find(e => e.type === ENTRY_TYPES.CLOCK_OUT);
 
-        // Calculer en fonction des pointages disponibles
-        let totalTime = 0;
+        if (!clockIn) {
+            return 0;
+        }
 
-        if (clockIn) {
-            if (clockOut) {
-                // Journée complète: du clock-in au clock-out
-                totalTime = clockOut.timestamp.getTime() - clockIn.timestamp.getTime();
+        // Calculer le temps total (du clock-in au clock-out ou maintenant)
+        const endTime = clockOut ? clockOut.timestamp.getTime() : Date.now();
+        let totalTime = endTime - clockIn.timestamp.getTime();
 
-                // Soustraire le temps de pause si présent
-                if (lunchStart && lunchEnd) {
-                    const lunchDuration = lunchEnd.timestamp.getTime() - lunchStart.timestamp.getTime();
-                    totalTime -= lunchDuration;
-                }
-            } else if (lunchStart) {
-                // En cours: du clock-in au lunch-start (matin) ou jusqu'à maintenant (après-midi)
-                if (lunchEnd) {
-                    // Après-midi en cours: matin + depuis la fin de la pause
-                    const morningTime = lunchStart.timestamp.getTime() - clockIn.timestamp.getTime();
-                    const afternoonTime = Date.now() - lunchEnd.timestamp.getTime();
-                    totalTime = morningTime + afternoonTime;
-                } else {
-                    // Pause en cours: seulement le temps du matin
-                    totalTime = lunchStart.timestamp.getTime() - clockIn.timestamp.getTime();
-                }
+        // Trouver toutes les paires de pauses (start/end)
+        const breakPairs = this.#getBreakPairs(entries);
+
+        // Soustraire le temps de chaque pause complète
+        for (const pair of breakPairs) {
+            if (pair.end) {
+                totalTime -= (pair.end.timestamp.getTime() - pair.start.timestamp.getTime());
             } else {
-                // Matin en cours: du clock-in à maintenant
-                totalTime = Date.now() - clockIn.timestamp.getTime();
+                // Pause en cours: soustraire le temps jusqu'à maintenant
+                totalTime -= (Date.now() - pair.start.timestamp.getTime());
             }
         }
 
         return Math.max(0, totalTime);
+    }
+
+    /**
+     * Trouve toutes les paires de pauses (start/end) dans les pointages
+     * @param {TimeEntry[]} entries - Liste des pointages
+     * @returns {Array<{start: TimeEntry, end: TimeEntry|null}>} Paires de pauses
+     * @private
+     */
+    #getBreakPairs(entries) {
+        const pairs = [];
+        let currentBreakStart = null;
+
+        // Trier les entrées par timestamp
+        const sortedEntries = [...entries].sort((a, b) =>
+            a.timestamp.getTime() - b.timestamp.getTime()
+        );
+
+        for (const entry of sortedEntries) {
+            if (isBreakStart(entry.type)) {
+                // Début d'une nouvelle pause
+                if (currentBreakStart) {
+                    // Il y avait déjà un début sans fin - on l'ajoute quand même
+                    pairs.push({ start: currentBreakStart, end: null });
+                }
+                currentBreakStart = entry;
+            } else if (isBreakEnd(entry.type) && currentBreakStart) {
+                // Fin de la pause en cours
+                pairs.push({ start: currentBreakStart, end: entry });
+                currentBreakStart = null;
+            }
+        }
+
+        // Si une pause est toujours en cours
+        if (currentBreakStart) {
+            pairs.push({ start: currentBreakStart, end: null });
+        }
+
+        return pairs;
     }
 
     /**
@@ -95,25 +121,35 @@ export class TimeCalculator {
     }
 
     /**
-     * Calcule le temps de pause déjeuner
+     * Calcule le temps total de toutes les pauses
+     * @param {TimeEntry[]} entries - Liste des pointages du jour
+     * @returns {number} Durée totale des pauses en millisecondes
+     */
+    calculateBreaksDuration(entries) {
+        const breakPairs = this.#getBreakPairs(entries);
+        let totalDuration = 0;
+
+        for (const pair of breakPairs) {
+            if (pair.end) {
+                // Pause terminée
+                totalDuration += pair.end.timestamp.getTime() - pair.start.timestamp.getTime();
+            } else {
+                // Pause en cours
+                totalDuration += Date.now() - pair.start.timestamp.getTime();
+            }
+        }
+
+        return totalDuration;
+    }
+
+    /**
+     * Calcule le temps de pause déjeuner (compatibilité)
+     * @deprecated Utiliser calculateBreaksDuration à la place
      * @param {TimeEntry[]} entries - Liste des pointages du jour
      * @returns {number} Durée de la pause en millisecondes
      */
     calculateLunchDuration(entries) {
-        const lunchStart = entries.find(e => e.type === ENTRY_TYPES.LUNCH_START);
-        const lunchEnd = entries.find(e => e.type === ENTRY_TYPES.LUNCH_END);
-
-        if (!lunchStart) {
-            return 0;
-        }
-
-        if (lunchEnd) {
-            // Pause terminée
-            return lunchEnd.timestamp.getTime() - lunchStart.timestamp.getTime();
-        } else {
-            // Pause en cours
-            return Date.now() - lunchStart.timestamp.getTime();
-        }
+        return this.calculateBreaksDuration(entries);
     }
 
     /**
@@ -127,51 +163,73 @@ export class TimeCalculator {
         }
 
         const hasClockIn = entries.some(e => e.type === ENTRY_TYPES.CLOCK_IN);
-        const hasLunchStart = entries.some(e => e.type === ENTRY_TYPES.LUNCH_START);
-        const hasLunchEnd = entries.some(e => e.type === ENTRY_TYPES.LUNCH_END);
         const hasClockOut = entries.some(e => e.type === ENTRY_TYPES.CLOCK_OUT);
 
         if (hasClockOut) {
             return DayStatus.COMPLETED;
         }
 
-        if (hasLunchEnd) {
-            return DayStatus.AFTERNOON;
+        if (!hasClockIn) {
+            return DayStatus.NOT_STARTED;
         }
 
-        if (hasLunchStart) {
-            return DayStatus.LUNCH;
+        // Vérifier si on est actuellement en pause
+        const breakPairs = this.#getBreakPairs(entries);
+        const hasOpenBreak = breakPairs.some(pair => pair.end === null);
+
+        if (hasOpenBreak) {
+            return DayStatus.LUNCH; // Réutiliser LUNCH pour "en pause"
         }
 
-        if (hasClockIn) {
-            return DayStatus.MORNING;
-        }
-
-        return DayStatus.NOT_STARTED;
+        // On est en train de travailler (mais pas en pause)
+        // Garder MORNING ou AFTERNOON pour compatibilité
+        const hasAnyBreak = breakPairs.length > 0;
+        return hasAnyBreak ? DayStatus.AFTERNOON : DayStatus.MORNING;
     }
 
     /**
      * Détermine quel bouton doit être activé en fonction de l'état du jour
+     * @deprecated Utiliser getEnabledButtons pour supporter plusieurs pauses
      * @param {TimeEntry[]} entries - Liste des pointages du jour
      * @returns {string|null} Type du prochain pointage attendu ou null si journée terminée
      */
     getNextExpectedEntry(entries) {
+        const enabled = this.getEnabledButtons(entries);
+        return enabled.length > 0 ? enabled[0] : null;
+    }
+
+    /**
+     * Détermine tous les boutons qui doivent être activés
+     * @param {TimeEntry[]} entries - Liste des pointages du jour
+     * @returns {string[]} Liste des types de pointages disponibles
+     */
+    getEnabledButtons(entries) {
         const status = this.getDayStatus(entries);
+        const enabled = [];
 
         switch (status) {
             case DayStatus.NOT_STARTED:
-                return ENTRY_TYPES.CLOCK_IN;
+                enabled.push(ENTRY_TYPES.CLOCK_IN);
+                break;
+
             case DayStatus.MORNING:
-                return ENTRY_TYPES.LUNCH_START;
-            case DayStatus.LUNCH:
-                return ENTRY_TYPES.LUNCH_END;
             case DayStatus.AFTERNOON:
-                return ENTRY_TYPES.CLOCK_OUT;
+                // En train de travailler : on peut prendre une pause ou partir
+                enabled.push(ENTRY_TYPES.BREAK_START);
+                enabled.push(ENTRY_TYPES.CLOCK_OUT);
+                break;
+
+            case DayStatus.LUNCH:
+                // En pause : on peut seulement reprendre le travail
+                enabled.push(ENTRY_TYPES.BREAK_END);
+                break;
+
             case DayStatus.COMPLETED:
-                return null;
-            default:
-                return null;
+                // Journée terminée : aucun bouton
+                break;
         }
+
+        return enabled;
     }
 
     /**
