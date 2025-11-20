@@ -6,7 +6,7 @@
 'use strict';
 
 import { StorageService } from './js/storage.js';
-import { TimeEntry, ENTRY_TYPES, isBreakStart } from './js/time-entry.js';
+import { TimeEntry, ENTRY_TYPES, isBreakStart, isBreakEnd } from './js/time-entry.js';
 import { TimeCalculator } from './js/calculator.js';
 import { TimeTrackerUI } from './js/ui.js';
 import { getTodayDateString } from './js/utils.js';
@@ -172,8 +172,47 @@ class App {
             // Si on démarre une pause, arrêter le timer de projet en cours
             if (isBreakStart(entryType) && this.timer.isRunning()) {
                 console.log('⏸️ Arrêt automatique du timer de projet lors de la pause');
+                // Sauvegarder l'ID du projet actif pour le redémarrer après la pause
+                const projectId = this.timer.getCurrentProjectId();
+                localStorage.setItem('pausedProjectId', projectId);
+                console.log('💾 Projet sauvegardé pour reprise automatique:', projectId);
+
                 await this.timer.stop();
                 await this.updateProjectsUI();
+            }
+
+            // Si on termine une pause, redémarrer le projet qui était actif avant la pause
+            if (isBreakEnd(entryType)) {
+                const pausedProjectId = localStorage.getItem('pausedProjectId');
+                if (pausedProjectId) {
+                    console.log('▶️ Reprise automatique du projet après la pause:', pausedProjectId);
+                    // Créer l'entrée d'abord
+                    const entry = new TimeEntry(entryType);
+                    await this.storage.saveEntry(entry);
+                    this.todayEntries.push(entry);
+
+                    // Ensuite redémarrer le projet
+                    try {
+                        await this.timer.start(pausedProjectId);
+                        await this.loadTodaySessions();
+                        await this.updateAllDisplays();
+
+                        // Nettoyer le localStorage
+                        localStorage.removeItem('pausedProjectId');
+
+                        this.ui.showSuccess('Fin de pause enregistrée - Projet redémarré');
+                        console.log('✅ Pointage enregistré et projet redémarré:', entryType);
+                    } catch (error) {
+                        // Si le projet n'existe plus, ne pas bloquer
+                        console.warn('⚠️ Impossible de redémarrer le projet:', error.message);
+                        localStorage.removeItem('pausedProjectId');
+
+                        await this.updateAllDisplays();
+                        this.ui.showSuccess('Fin de pause enregistrée');
+                        console.log('✅ Pointage enregistré:', entryType);
+                    }
+                    return;
+                }
             }
 
             // Créer l'entrée
