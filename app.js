@@ -173,7 +173,7 @@ class App {
             if (isBreakStart(entryType) && this.timer.isRunning()) {
                 console.log('⏸️ Arrêt automatique du timer de projet lors de la pause');
                 await this.timer.stop();
-                await this.updateProjectsDisplay();
+                await this.updateProjectsUI();
             }
 
             // Créer l'entrée
