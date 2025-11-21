@@ -184,6 +184,13 @@ class App {
                 await this.updateProjectsUI();
             }
 
+            // Si on pointe son départ, arrêter le timer de projet en cours
+            if (entryType === ENTRY_TYPES.CLOCK_OUT && this.timer.isRunning()) {
+                console.log('⏹️ Arrêt automatique du timer de projet lors du départ');
+                await this.timer.stop();
+                await this.loadTodaySessions();
+            }
+
             // Si on termine une pause, redémarrer le projet qui était actif avant la pause
             if (isBreakEnd(entryType)) {
                 const pausedProjectId = localStorage.getItem('pausedProjectId');
