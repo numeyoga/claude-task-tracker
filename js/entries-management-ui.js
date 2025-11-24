@@ -1,6 +1,7 @@
 'use strict';
 
 import { formatTime } from './utils.js';
+import { ENTRY_TYPES } from './time-entry.js';
 
 /**
  * UI pour la gestion de toutes les entrées
@@ -296,10 +297,12 @@ export class EntriesManagementUI {
      */
     getEntryIcon(type) {
         const icons = {
-            'clock-in': '🟢',
-            'lunch-start': '🍽️',
-            'lunch-end': '✅',
-            'clock-out': '🔴'
+            [ENTRY_TYPES.CLOCK_IN]: '🟢',
+            [ENTRY_TYPES.BREAK_START]: '⏸️',
+            [ENTRY_TYPES.BREAK_END]: '▶️',
+            [ENTRY_TYPES.LUNCH_START]: '🍽️', // Compatibilité
+            [ENTRY_TYPES.LUNCH_END]: '✅', // Compatibilité
+            [ENTRY_TYPES.CLOCK_OUT]: '🔴'
         };
         return icons[type] || '📌';
     }
@@ -311,10 +314,12 @@ export class EntriesManagementUI {
      */
     getEntryLabel(type) {
         const labels = {
-            'clock-in': 'Arrivée',
-            'lunch-start': 'Début pause',
-            'lunch-end': 'Fin pause',
-            'clock-out': 'Départ'
+            [ENTRY_TYPES.CLOCK_IN]: 'Arrivée',
+            [ENTRY_TYPES.BREAK_START]: 'Début pause',
+            [ENTRY_TYPES.BREAK_END]: 'Fin pause',
+            [ENTRY_TYPES.LUNCH_START]: 'Début pause', // Compatibilité
+            [ENTRY_TYPES.LUNCH_END]: 'Fin pause', // Compatibilité
+            [ENTRY_TYPES.CLOCK_OUT]: 'Départ'
         };
         return labels[type] || type;
     }

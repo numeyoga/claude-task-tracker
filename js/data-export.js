@@ -1,6 +1,7 @@
 'use strict';
 
 import { formatDuration, formatTime, sanitizeForCSV } from './utils.js';
+import { ENTRY_TYPES } from './time-entry.js';
 
 /**
  * Formats d'export disponibles
@@ -370,10 +371,12 @@ export class DataExporter {
      */
     #getEntryTypeLabel(type) {
         const labels = {
-            'clock-in': 'Arrivée',
-            'lunch-start': 'Début pause',
-            'lunch-end': 'Fin pause',
-            'clock-out': 'Départ'
+            [ENTRY_TYPES.CLOCK_IN]: 'Arrivée',
+            [ENTRY_TYPES.BREAK_START]: 'Début pause',
+            [ENTRY_TYPES.BREAK_END]: 'Fin pause',
+            [ENTRY_TYPES.LUNCH_START]: 'Début pause', // Compatibilité
+            [ENTRY_TYPES.LUNCH_END]: 'Fin pause', // Compatibilité
+            [ENTRY_TYPES.CLOCK_OUT]: 'Départ'
         };
         return labels[type] || type;
     }

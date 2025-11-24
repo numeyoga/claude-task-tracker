@@ -1,5 +1,7 @@
 'use strict';
 
+import { ENTRY_TYPES } from './time-entry.js';
+
 /**
  * Fonctions utilitaires pour le Time Tracker
  */
@@ -70,12 +72,12 @@ export function getTodayDateString() {
  */
 export function getEntryTypeLabel(type) {
     const labels = {
-        'clock-in': 'Arrivée',
-        'break-start': 'Début pause',
-        'break-end': 'Fin pause',
-        'lunch-start': 'Début pause', // Compatibilité
-        'lunch-end': 'Fin pause', // Compatibilité
-        'clock-out': 'Départ'
+        [ENTRY_TYPES.CLOCK_IN]: 'Arrivée',
+        [ENTRY_TYPES.BREAK_START]: 'Début pause',
+        [ENTRY_TYPES.BREAK_END]: 'Fin pause',
+        [ENTRY_TYPES.LUNCH_START]: 'Début pause', // Compatibilité
+        [ENTRY_TYPES.LUNCH_END]: 'Fin pause', // Compatibilité
+        [ENTRY_TYPES.CLOCK_OUT]: 'Départ'
     };
 
     return labels[type] || type;
