@@ -58,14 +58,14 @@ export class DayTimeline {
         // Sauvegarder les données pour les détails
         this.currentDayData = { entries, sessions, projects };
 
-        // Vérifier s'il y a des données
-        if (!entries || entries.length === 0) {
+        // Vérifier s'il y a des données (pointages OU sessions)
+        if ((!entries || entries.length === 0) && (!sessions || sessions.length === 0)) {
             this.elements.container.innerHTML = '<p class="day-timeline__empty">Aucun pointage pour aujourd\'hui</p>';
             return;
         }
 
         // Trouver l'heure de début et de fin
-        const { startTime, endTime } = this.#getTimeRange(entries);
+        const { startTime, endTime } = this.#getTimeRange(entries, sessions);
 
         if (!startTime) {
             this.elements.container.innerHTML = '<p class="day-timeline__empty">Aucun pointage pour aujourd\'hui</p>';
@@ -79,25 +79,68 @@ export class DayTimeline {
     /**
      * Détermine les bornes de temps pour la journée
      * @param {Object[]} entries - Pointages du jour
+     * @param {Object[]} sessions - Sessions de projet du jour
      * @returns {Object} { startTime, endTime }
      * @private
      */
-    #getTimeRange(entries) {
-        // Trouver le pointage d'arrivée (CLOCK_IN)
-        const clockInEntry = entries.find(e => e.type === ENTRY_TYPES.CLOCK_IN);
+    #getTimeRange(entries, sessions) {
+        let startTime = null;
+        let endTime = null;
 
-        if (!clockInEntry) {
+        // Priorité 1 : Trouver le pointage d'arrivée (CLOCK_IN)
+        const clockInEntry = entries?.find(e => e.type === ENTRY_TYPES.CLOCK_IN);
+
+        if (clockInEntry) {
+            startTime = new Date(clockInEntry.timestamp);
+        } else if (sessions && sessions.length > 0) {
+            // Priorité 2 : Si pas de CLOCK_IN, utiliser la première session
+            const sortedSessions = [...sessions].sort((a, b) =>
+                new Date(a.startTime) - new Date(b.startTime)
+            );
+            startTime = new Date(sortedSessions[0].startTime);
+        } else if (entries && entries.length > 0) {
+            // Priorité 3 : Si pas de sessions, utiliser le premier pointage
+            const sortedEntries = [...entries].sort((a, b) =>
+                new Date(a.timestamp) - new Date(b.timestamp)
+            );
+            startTime = new Date(sortedEntries[0].timestamp);
+        }
+
+        // Si toujours pas de startTime, retourner null
+        if (!startTime) {
             return { startTime: null, endTime: null };
         }
 
-        const startTime = new Date(clockInEntry.timestamp);
+        // Trouver le pointage de départ (CLOCK_OUT)
+        const clockOutEntry = entries?.find(e => e.type === ENTRY_TYPES.CLOCK_OUT);
 
-        // Trouver le pointage de départ (CLOCK_OUT) ou utiliser 18h00
-        const clockOutEntry = entries.find(e => e.type === ENTRY_TYPES.CLOCK_OUT);
-
-        let endTime;
         if (clockOutEntry) {
             endTime = new Date(clockOutEntry.timestamp);
+        } else if (sessions && sessions.length > 0) {
+            // Si pas de CLOCK_OUT, chercher la dernière session terminée
+            const sortedSessions = [...sessions].sort((a, b) =>
+                new Date(b.startTime) - new Date(a.startTime)
+            );
+            const lastSession = sortedSessions[0];
+
+            if (lastSession.endTime) {
+                // Si la dernière session est terminée, utiliser son heure de fin
+                const lastSessionEnd = new Date(lastSession.endTime);
+                // Utiliser au moins 18h00 ou l'heure de fin de session
+                endTime = new Date(startTime);
+                endTime.setHours(18, 0, 0, 0);
+                if (lastSessionEnd > endTime) {
+                    endTime = lastSessionEnd;
+                }
+            } else {
+                // Session en cours, utiliser l'heure actuelle ou 18h00
+                const now = new Date();
+                endTime = new Date(startTime);
+                endTime.setHours(18, 0, 0, 0);
+                if (now > endTime) {
+                    endTime = now;
+                }
+            }
         } else {
             // Utiliser 18h00 du même jour
             endTime = new Date(startTime);
