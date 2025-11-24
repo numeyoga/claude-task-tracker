@@ -125,6 +125,19 @@
                 <div id="project-stats" class="project-stats">
                     <p class="project-stats__empty">Aucune session de travail pour aujourd'hui</p>
                 </div>
+
+                <!-- Ligne de temps de la journée -->
+                <div class="day-timeline">
+                    <div class="day-timeline__header">
+                        <h3 class="day-timeline__title">Répartition de la journée</h3>
+                        <button id="timeline-details-btn" class="day-timeline__details-btn" title="Voir le détail de la journée">
+                            📋
+                        </button>
+                    </div>
+                    <div id="day-timeline-content" class="day-timeline__content">
+                        <p class="day-timeline__empty">Aucun pointage pour aujourd'hui</p>
+                    </div>
+                </div>
             </section>
         </div>
     </main>
@@ -239,6 +252,22 @@
             <div class="modal__body">
                 <div id="sessions-list" class="sessions-list">
                     <!-- Les sessions seront ajoutées ici dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour le détail de la journée -->
+    <div id="day-details-modal" class="modal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title">Détail de la journée</h3>
+                <button id="close-day-modal-btn" class="modal__close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal__body">
+                <div id="day-details-list" class="day-details-list">
+                    <!-- Le détail sera ajouté ici dynamiquement -->
                 </div>
             </div>
         </div>
