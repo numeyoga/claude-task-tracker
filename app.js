@@ -20,6 +20,7 @@ import { ReportsUI } from './js/reports-ui.js';
 import { EntriesManagementUI } from './js/entries-management-ui.js';
 import { SessionsManagementUI } from './js/sessions-management-ui.js';
 import { EditSessionPopover } from './js/popover.js';
+import { DayTimeline } from './js/day-timeline.js';
 
 /**
  * Contrôleur principal de l'application
@@ -37,6 +38,7 @@ class App {
         this.reportsUI = new ReportsUI();
         this.entriesManagementUI = new EntriesManagementUI();
         this.sessionsManagementUI = new SessionsManagementUI();
+        this.dayTimeline = new DayTimeline();
 
         // État
         this.todayEntries = [];
@@ -75,6 +77,7 @@ class App {
             this.reportsUI.init();
             this.entriesManagementUI.init();
             this.sessionsManagementUI.init();
+            this.dayTimeline.init();
 
             // Charger les données du jour
             await this.loadTodayData();
@@ -600,6 +603,9 @@ class App {
         // Calculer et afficher les statistiques
         const stats = this.calculator.calculateProjectStats(this.todaySessions, this.projects);
         this.timerUI.renderStats(stats);
+
+        // Mettre à jour la ligne de temps
+        this.dayTimeline.update(this.todayEntries, this.todaySessions, this.projects);
     }
 
     /**
