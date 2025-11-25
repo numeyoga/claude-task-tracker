@@ -920,7 +920,9 @@ body {
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
     font-size: var(--font-size-xs);
-    white-space: nowrap;
+    white-space: normal;
+    max-width: 200px;
+    text-align: center;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s ease;

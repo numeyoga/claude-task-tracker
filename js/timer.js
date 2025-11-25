@@ -72,17 +72,18 @@ export class ProjectTimer {
 
     /**
      * Arrête le chronomètre en cours
+     * @param {Date} endTime - Heure de fin optionnelle (par défaut: maintenant)
      * @returns {Promise<ProjectSession|null>} Session terminée ou null
      * @throws {Error} Si aucun chronomètre n'est en cours
      */
-    async stop() {
+    async stop(endTime = new Date()) {
         try {
             if (!this.currentSession) {
                 throw new Error('Aucun chronomètre n\'est en cours');
             }
 
-            // Arrêter la session
-            this.currentSession.stop();
+            // Arrêter la session avec l'heure spécifiée
+            this.currentSession.stop(endTime);
 
             // Sauvegarder dans IndexedDB
             await this.storage.saveSession(this.currentSession);

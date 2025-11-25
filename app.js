@@ -214,8 +214,24 @@ class App {
             // Si on pointe son départ, arrêter le timer de projet en cours
             if (entryType === ENTRY_TYPES.CLOCK_OUT && this.timer.isRunning()) {
                 console.log('⏹️ Arrêt automatique du timer de projet lors du départ');
-                await this.timer.stop();
+                // Créer le timestamp du pointage
+                const clockOutTime = new Date();
+                // Arrêter la session juste avant le pointage (1 seconde avant)
+                const sessionEndTime = new Date(clockOutTime.getTime() - 1000);
+                await this.timer.stop(sessionEndTime);
                 await this.loadTodaySessions();
+
+                // Créer et enregistrer l'entrée de pointage avec le timestamp correct
+                const entry = new TimeEntry(entryType, clockOutTime);
+                await this.storage.saveEntry(entry);
+                this.todayEntries.push(entry);
+
+                // Mettre à jour tous les affichages
+                await this.updateAllDisplays();
+
+                this.ui.showSuccess('Départ enregistré');
+                console.log('✅ Pointage enregistré:', entryType);
+                return;
             }
 
             // Si on termine une pause, redémarrer le projet qui était actif avant la pause
