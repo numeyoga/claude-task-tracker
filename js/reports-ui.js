@@ -801,7 +801,10 @@ export class ReportsUI {
             return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
         };
 
-        // Créer le HTML
+        // Créer le détail textuel de la journée
+        const detailsHtml = this.#renderDayDetailsText(entries, sessions, projects, formatTime);
+
+        // Créer le HTML avec la timeline et les détails
         const html = `
             <div class="day-timeline__bar">
                 ${segments.map(segment => this.#renderSegmentInModal(segment, startTime, totalDuration, formatTime, formatDuration)).join('')}
@@ -810,6 +813,7 @@ export class ReportsUI {
                 <span>${formatTime(startTime)}</span>
                 <span>${formatTime(endTime)}</span>
             </div>
+            ${detailsHtml}
         `;
 
         this.dayTimelineModalContent.innerHTML = html;
@@ -964,5 +968,132 @@ export class ReportsUI {
                 ${widthPercent > 8 ? `<span class="day-timeline__segment-label">${segment.label}</span>` : ''}
             </div>
         `;
+    }
+
+    /**
+     * Rend le détail textuel de la journée
+     * @param {Object[]} entries - Pointages
+     * @param {Object[]} sessions - Sessions de projet
+     * @param {Object[]} projects - Projets
+     * @param {Function} formatTime - Fonction de formatage du temps
+     * @returns {string} HTML du détail textuel
+     * @private
+     */
+    #renderDayDetailsText(entries, sessions, projects, formatTime) {
+        if ((!entries || entries.length === 0) && (!sessions || sessions.length === 0)) {
+            return '';
+        }
+
+        // Combiner toutes les activités avec leur timestamp
+        const timeline = [];
+
+        // Ajouter les pointages
+        if (entries && entries.length > 0) {
+            entries.forEach(entry => {
+                const type = this.#getEntryTypeLabel(entry.type);
+                timeline.push({
+                    time: new Date(entry.timestamp),
+                    type: 'entry',
+                    label: type,
+                    subtype: entry.type
+                });
+            });
+        }
+
+        // Ajouter les sessions
+        if (sessions && sessions.length > 0) {
+            sessions.forEach(session => {
+                const project = projects?.find(p => p.id === session.projectId);
+                const sessionEnd = session.endTime ? new Date(session.endTime) : new Date();
+                const sessionStart = new Date(session.startTime);
+                const durationMs = sessionEnd - sessionStart;
+                const hours = Math.floor(durationMs / 3600000);
+                const minutes = Math.floor((durationMs % 3600000) / 60000);
+                const duration = `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+
+                timeline.push({
+                    time: sessionStart,
+                    type: 'session-start',
+                    label: `Début session: ${project?.name || 'Projet inconnu'}`,
+                    duration: duration,
+                    projectColor: project?.color
+                });
+
+                if (session.endTime) {
+                    timeline.push({
+                        time: sessionEnd,
+                        type: 'session-end',
+                        label: `Fin session: ${project?.name || 'Projet inconnu'}`,
+                        projectColor: project?.color
+                    });
+                }
+            });
+        }
+
+        // Trier par ordre chronologique
+        timeline.sort((a, b) => a.time - b.time);
+
+        // Générer le HTML
+        const detailsItems = timeline.map(item => {
+            let className = 'day-details-item';
+
+            if (item.type === 'entry') {
+                if (this.#isBreakEntry(item.subtype)) {
+                    className += ' day-details-item--break';
+                } else {
+                    className += ' day-details-item--entry';
+                }
+            } else {
+                className += ' day-details-item--session';
+            }
+
+            return `
+                <div class="${className}">
+                    <div class="day-details-item__time">${formatTime(item.time)}</div>
+                    <div class="day-details-item__label">${item.label}</div>
+                    ${item.duration ? `<div class="day-details-item__duration">Durée: ${item.duration}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="day-timeline-details">
+                <h4 class="day-timeline-details__title">Détail de la journée</h4>
+                <div class="day-timeline-details__list">
+                    ${detailsItems}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Obtient le libellé d'un type de pointage
+     * @param {string} type - Type de pointage
+     * @returns {string} Libellé
+     * @private
+     */
+    #getEntryTypeLabel(type) {
+        const labels = {
+            [ENTRY_TYPES.CLOCK_IN]: '🟢 Arrivée',
+            [ENTRY_TYPES.CLOCK_OUT]: '🔴 Départ',
+            [ENTRY_TYPES.BREAK_START]: '⏸️ Début de pause',
+            [ENTRY_TYPES.BREAK_END]: '▶️ Fin de pause',
+            [ENTRY_TYPES.LUNCH_START]: '⏸️ Début de pause déjeuner',
+            [ENTRY_TYPES.LUNCH_END]: '▶️ Fin de pause déjeuner'
+        };
+        return labels[type] || type;
+    }
+
+    /**
+     * Vérifie si un type de pointage est une pause
+     * @param {string} type - Type de pointage
+     * @returns {boolean}
+     * @private
+     */
+    #isBreakEntry(type) {
+        return type === ENTRY_TYPES.BREAK_START ||
+               type === ENTRY_TYPES.BREAK_END ||
+               type === ENTRY_TYPES.LUNCH_START ||
+               type === ENTRY_TYPES.LUNCH_END;
     }
 }

@@ -1434,6 +1434,55 @@ body {
     min-height: 150px;
 }
 
+/* Timeline dans la modale */
+.day-timeline-modal-content .day-timeline__bar {
+    margin-bottom: var(--spacing-md);
+    height: 50px;
+}
+
+.day-timeline-modal-content .day-timeline__labels {
+    margin-bottom: var(--spacing-lg);
+    padding: 0 var(--spacing-xs);
+    font-weight: 500;
+}
+
+/* Améliorer les tooltips dans la modale */
+.day-timeline-modal-content .day-timeline__tooltip {
+    z-index: 1001;
+}
+
+/* Section des détails textuels dans la modale */
+.day-timeline-details {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+}
+
+.day-timeline-details__title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md);
+}
+
+.day-timeline-details__list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+/* Améliorer l'affichage des items de détails dans la modale */
+.day-timeline-details__list .day-details-item {
+    background-color: var(--color-background);
+}
+
+.day-timeline-details__list .day-details-item:hover {
+    transform: translateX(4px);
+    transition: transform 0.2s ease;
+}
+
 /* ======================
    Popover
    ====================== */
@@ -1682,9 +1731,9 @@ input[type="radio"] {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    max-width: 600px;
+    max-width: 800px;
     width: 90%;
-    max-height: 80vh;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
     animation: modalSlideIn 0.3s ease-out;
