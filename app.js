@@ -162,6 +162,33 @@ class App {
         }
     }
 
+    /**
+     * Charge les données d'un jour spécifique pour la timeline
+     * @param {string} date - Date au format YYYY-MM-DD
+     * @returns {Promise<Object>} Données du jour (entries, sessions, projects)
+     */
+    async loadDayData(date) {
+        try {
+            const entries = await this.storage.getEntriesByDate(date);
+            const sessions = await this.storage.getSessionsByDate(date);
+
+            console.log(`📅 Chargement des données pour ${date}: ${entries.length} entrée(s), ${sessions.length} session(s)`);
+
+            return {
+                entries,
+                sessions,
+                projects: this.projects // Utiliser les projets déjà chargés
+            };
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement des données du jour:', error);
+            return {
+                entries: [],
+                sessions: [],
+                projects: []
+            };
+        }
+    }
+
     // ======================
     // Gestion des pointages
     // ======================
@@ -991,6 +1018,11 @@ class App {
         // Navigation de période
         this.reportsUI.onPeriodNavigate = (direction) => {
             this.navigatePeriod(direction);
+        };
+
+        // Demande de timeline pour un jour spécifique
+        this.reportsUI.onDayTimelineRequest = async (date) => {
+            return await this.loadDayData(date);
         };
 
         console.log('✅ Écouteurs d\'événements des rapports configurés');

@@ -1,6 +1,7 @@
 'use strict';
 
 import { formatDuration, createElement } from './utils.js';
+import { ENTRY_TYPES } from './time-entry.js';
 
 /**
  * Gestion de l'interface utilisateur des rapports
@@ -17,10 +18,16 @@ export class ReportsUI {
         this.periodMonthBtn = null;
         this.periodPrevBtn = null;
         this.periodNextBtn = null;
+        this.dayTimelineModal = null;
+        this.dayTimelineModalTitle = null;
+        this.dayTimelineModalContent = null;
+        this.closeDayTimelineModalBtn = null;
+        this.dayTimelineModalOverlay = null;
 
         // Callbacks
         this.onPeriodTypeChange = null;
         this.onPeriodNavigate = null;
+        this.onDayTimelineRequest = null; // Callback pour charger les données d'un jour
     }
 
     /**
@@ -37,6 +44,11 @@ export class ReportsUI {
         this.periodMonthBtn = document.getElementById('period-month-btn');
         this.periodPrevBtn = document.getElementById('period-prev-btn');
         this.periodNextBtn = document.getElementById('period-next-btn');
+        this.dayTimelineModal = document.getElementById('day-timeline-modal');
+        this.dayTimelineModalTitle = document.getElementById('day-timeline-modal-title');
+        this.dayTimelineModalContent = document.getElementById('day-timeline-modal-content');
+        this.closeDayTimelineModalBtn = document.getElementById('close-day-timeline-modal-btn');
+        this.dayTimelineModalOverlay = this.dayTimelineModal?.querySelector('.modal__overlay');
 
         // Configurer les event listeners
         this.#setupEventListeners();
@@ -134,7 +146,29 @@ export class ReportsUI {
 
         // Colonnes pour chaque jour (lundi à vendredi)
         weekDays.forEach(day => {
-            const dayHeader = createElement('th', { class: 'weekly-table__header' }, this.#formatDateShort(day.date));
+            const dayHeader = createElement('th', { class: 'weekly-table__header' });
+
+            // Créer un conteneur pour la date et le bouton
+            const headerContent = createElement('div', { class: 'weekly-table__header-content' });
+
+            // Ajouter la date
+            const dateText = createElement('span', { class: 'weekly-table__header-date' }, this.#formatDateShort(day.date));
+            headerContent.appendChild(dateText);
+
+            // Ajouter le bouton de timeline
+            const timelineBtn = createElement('button', {
+                class: 'weekly-table__timeline-btn',
+                title: 'Voir la timeline de ce jour',
+                'data-date': day.date
+            }, '📊');
+
+            timelineBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showDayTimeline(day.date);
+            });
+
+            headerContent.appendChild(timelineBtn);
+            dayHeader.appendChild(headerContent);
             headerRow.appendChild(dayHeader);
         });
 
@@ -542,6 +576,15 @@ export class ReportsUI {
                 this.onPeriodNavigate('next');
             }
         });
+
+        // Boutons de la modale de timeline
+        this.closeDayTimelineModalBtn?.addEventListener('click', () => {
+            this.#closeDayTimelineModal();
+        });
+
+        this.dayTimelineModalOverlay?.addEventListener('click', () => {
+            this.#closeDayTimelineModal();
+        });
     }
 
     // ======================
@@ -616,5 +659,310 @@ export class ReportsUI {
                 document.body.removeChild(toast);
             }, 300);
         }, 3000);
+    }
+
+    // ======================
+    // Gestion de la modale de timeline
+    // ======================
+
+    /**
+     * Ouvre la modale de timeline pour un jour spécifique
+     * @param {string} date - Date au format YYYY-MM-DD
+     */
+    async showDayTimeline(date) {
+        if (!this.dayTimelineModal) return;
+
+        // Mettre à jour le titre avec la date
+        if (this.dayTimelineModalTitle) {
+            this.dayTimelineModalTitle.textContent = `Timeline du ${this.#formatDate(date)}`;
+        }
+
+        // Afficher un message de chargement
+        if (this.dayTimelineModalContent) {
+            this.dayTimelineModalContent.innerHTML = '<p class="day-timeline__empty">Chargement...</p>';
+        }
+
+        // Ouvrir la modale
+        this.dayTimelineModal.classList.add('modal--visible');
+
+        // Charger les données du jour via le callback
+        if (this.onDayTimelineRequest) {
+            const dayData = await this.onDayTimelineRequest(date);
+            this.#renderDayTimelineInModal(dayData);
+        }
+    }
+
+    /**
+     * Ferme la modale de timeline
+     * @private
+     */
+    #closeDayTimelineModal() {
+        if (this.dayTimelineModal) {
+            this.dayTimelineModal.classList.remove('modal--visible');
+        }
+    }
+
+    /**
+     * Rend la timeline d'un jour dans la modale
+     * @param {Object} dayData - Données du jour (entries, sessions, projects)
+     * @private
+     */
+    #renderDayTimelineInModal(dayData) {
+        if (!this.dayTimelineModalContent) return;
+
+        const { entries, sessions, projects } = dayData;
+
+        // Vérifier s'il y a des données
+        if ((!entries || entries.length === 0) && (!sessions || sessions.length === 0)) {
+            this.dayTimelineModalContent.innerHTML = '<p class="day-timeline__empty">Aucun pointage pour ce jour</p>';
+            return;
+        }
+
+        // Utiliser la même logique que DayTimeline pour créer la timeline
+        const { startTime, endTime } = this.#getTimeRange(entries, sessions);
+
+        if (!startTime) {
+            this.dayTimelineModalContent.innerHTML = '<p class="day-timeline__empty">Aucun pointage pour ce jour</p>';
+            return;
+        }
+
+        // Créer la timeline
+        this.#renderTimelineInModal(startTime, endTime, entries, sessions, projects);
+    }
+
+    /**
+     * Détermine les bornes de temps pour la journée
+     * @param {Object[]} entries - Pointages du jour
+     * @param {Object[]} sessions - Sessions de projet du jour
+     * @returns {Object} { startTime, endTime }
+     * @private
+     */
+    #getTimeRange(entries, sessions) {
+        let startTime = null;
+        let endTime = null;
+
+        // Priorité 1 : Trouver le pointage d'arrivée (CLOCK_IN)
+        const clockInEntry = entries?.find(e => e.type === ENTRY_TYPES.CLOCK_IN);
+
+        if (clockInEntry) {
+            startTime = new Date(clockInEntry.timestamp);
+        } else if (sessions && sessions.length > 0) {
+            // Priorité 2 : Si pas de CLOCK_IN, utiliser la première session
+            const sortedSessions = [...sessions].sort((a, b) =>
+                new Date(a.startTime) - new Date(b.startTime)
+            );
+            startTime = new Date(sortedSessions[0].startTime);
+        }
+
+        // Trouver l'heure de fin
+        const clockOutEntry = entries?.find(e => e.type === ENTRY_TYPES.CLOCK_OUT);
+
+        if (clockOutEntry) {
+            endTime = new Date(clockOutEntry.timestamp);
+        } else if (sessions && sessions.length > 0) {
+            // Utiliser la fin de la dernière session
+            const sortedSessions = [...sessions].sort((a, b) =>
+                new Date(b.endTime || b.startTime) - new Date(a.endTime || a.startTime)
+            );
+            const lastSession = sortedSessions[0];
+            endTime = lastSession.endTime ? new Date(lastSession.endTime) : new Date();
+        } else if (startTime) {
+            // Si pas de fin, utiliser maintenant
+            endTime = new Date();
+        }
+
+        return { startTime, endTime };
+    }
+
+    /**
+     * Rend la timeline dans la modale
+     * @param {Date} startTime - Heure de début
+     * @param {Date} endTime - Heure de fin
+     * @param {Object[]} entries - Pointages
+     * @param {Object[]} sessions - Sessions
+     * @param {Object[]} projects - Projets
+     * @private
+     */
+    #renderTimelineInModal(startTime, endTime, entries, sessions, projects) {
+        const totalDuration = endTime - startTime;
+
+        // Créer les segments
+        const segments = this.#createTimelineSegments(startTime, endTime, entries, sessions, projects);
+
+        // Formater le temps
+        const formatTime = (date) => {
+            return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        };
+
+        // Formater la durée
+        const formatDuration = (ms) => {
+            const hours = Math.floor(ms / 3600000);
+            const minutes = Math.floor((ms % 3600000) / 60000);
+            return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+        };
+
+        // Créer le HTML
+        const html = `
+            <div class="day-timeline__bar">
+                ${segments.map(segment => this.#renderSegmentInModal(segment, startTime, totalDuration, formatTime, formatDuration)).join('')}
+            </div>
+            <div class="day-timeline__labels">
+                <span>${formatTime(startTime)}</span>
+                <span>${formatTime(endTime)}</span>
+            </div>
+        `;
+
+        this.dayTimelineModalContent.innerHTML = html;
+    }
+
+    /**
+     * Crée les segments de la timeline
+     * @private
+     */
+    #createTimelineSegments(startTime, endTime, entries, sessions, projects) {
+        const segments = [];
+
+        // Créer une timeline des événements
+        const events = [];
+
+        // Ajouter les entrées
+        if (entries && entries.length > 0) {
+            entries.forEach(entry => {
+                events.push({
+                    time: new Date(entry.timestamp),
+                    type: entry.type,
+                    isEntry: true
+                });
+            });
+        }
+
+        // Ajouter les sessions
+        if (sessions && sessions.length > 0) {
+            sessions.forEach(session => {
+                const project = projects?.find(p => p.id === session.projectId);
+                events.push({
+                    time: new Date(session.startTime),
+                    type: 'session-start',
+                    session,
+                    project
+                });
+                if (session.endTime) {
+                    events.push({
+                        time: new Date(session.endTime),
+                        type: 'session-end',
+                        session
+                    });
+                }
+            });
+        }
+
+        // Trier les événements par temps
+        events.sort((a, b) => a.time - b.time);
+
+        // État actuel
+        let inBreak = false;
+        let currentSession = null;
+        let lastTime = startTime;
+
+        // Parcourir les événements et créer les segments
+        events.forEach(event => {
+            const eventTime = event.time;
+
+            if (event.isEntry) {
+                if (event.type === ENTRY_TYPES.BREAK_START) {
+                    // Si on était dans une session, la terminer
+                    if (currentSession) {
+                        const project = projects?.find(p => p.id === currentSession.projectId);
+                        segments.push({
+                            start: lastTime,
+                            end: eventTime,
+                            type: 'project',
+                            label: project?.name || 'Projet',
+                            color: project?.color
+                        });
+                        currentSession = null;
+                    }
+                    inBreak = true;
+                    lastTime = eventTime;
+                } else if (event.type === ENTRY_TYPES.BREAK_END) {
+                    if (inBreak) {
+                        segments.push({
+                            start: lastTime,
+                            end: eventTime,
+                            type: 'break',
+                            label: 'Pause'
+                        });
+                    }
+                    inBreak = false;
+                    lastTime = eventTime;
+                }
+            } else if (event.type === 'session-start') {
+                currentSession = event.session;
+                // Ne pas créer de segment maintenant, attendre la fin
+            } else if (event.type === 'session-end') {
+                if (currentSession && currentSession.id === event.session.id) {
+                    const project = projects?.find(p => p.id === currentSession.projectId);
+                    segments.push({
+                        start: new Date(currentSession.startTime),
+                        end: eventTime,
+                        type: 'project',
+                        label: project?.name || 'Projet',
+                        color: project?.color
+                    });
+                    currentSession = null;
+                }
+            }
+        });
+
+        // Si on a une session en cours, la terminer à endTime
+        if (currentSession) {
+            const project = projects?.find(p => p.id === currentSession.projectId);
+            segments.push({
+                start: new Date(currentSession.startTime),
+                end: endTime,
+                type: 'project',
+                label: project?.name || 'Projet',
+                color: project?.color
+            });
+        }
+
+        // Si on est en pause, la terminer
+        if (inBreak) {
+            segments.push({
+                start: lastTime,
+                end: endTime,
+                type: 'break',
+                label: 'Pause'
+            });
+        }
+
+        return segments;
+    }
+
+    /**
+     * Rend un segment de la timeline
+     * @private
+     */
+    #renderSegmentInModal(segment, startTime, totalDuration, formatTime, formatDuration) {
+        const leftPercent = ((segment.start - startTime) / totalDuration) * 100;
+        const widthPercent = ((segment.end - segment.start) / totalDuration) * 100;
+
+        const duration = formatDuration(segment.end - segment.start);
+        const tooltip = `${segment.label}\n${formatTime(segment.start)} - ${formatTime(segment.end)}\n${duration}`;
+
+        const style = segment.color ? `background-color: ${segment.color}` : '';
+
+        return `
+            <div class="day-timeline__segment day-timeline__segment--${segment.type}"
+                 style="left: ${leftPercent}%; width: ${widthPercent}%; ${style}"
+                 title="${tooltip}">
+                <div class="day-timeline__tooltip">
+                    ${segment.label}<br>
+                    ${formatTime(segment.start)} - ${formatTime(segment.end)}<br>
+                    ${duration}
+                </div>
+                ${widthPercent > 8 ? `<span class="day-timeline__segment-label">${segment.label}</span>` : ''}
+            </div>
+        `;
     }
 }

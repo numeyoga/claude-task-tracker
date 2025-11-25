@@ -274,6 +274,22 @@
         </div>
     </div>
 
+    <!-- Modal pour la timeline d'un jour -->
+    <div id="day-timeline-modal" class="modal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 id="day-timeline-modal-title" class="modal__title">Timeline du jour</h3>
+                <button id="close-day-timeline-modal-btn" class="modal__close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal__body">
+                <div id="day-timeline-modal-content" class="day-timeline-modal-content">
+                    <!-- La timeline sera ajoutée ici dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Script principal (ES6 module) -->
     <script type="module" src="app.js"></script>
 </body>
