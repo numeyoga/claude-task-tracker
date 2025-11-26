@@ -938,13 +938,15 @@ class App {
      */
     async loadCurrentReport() {
         try {
-            // Définir la période en fonction du type
-            if (this.currentPeriodType === 'week') {
-                this.currentPeriodStart = this.reportCalculator.getWeekStart();
-                this.currentPeriodEnd = this.reportCalculator.getWeekEnd();
-            } else {
-                this.currentPeriodStart = this.reportCalculator.getMonthStart();
-                this.currentPeriodEnd = this.reportCalculator.getMonthEnd();
+            // Définir la période en fonction du type (seulement si pas déjà définie)
+            if (!this.currentPeriodStart || !this.currentPeriodEnd) {
+                if (this.currentPeriodType === 'week') {
+                    this.currentPeriodStart = this.reportCalculator.getWeekStart();
+                    this.currentPeriodEnd = this.reportCalculator.getWeekEnd();
+                } else {
+                    this.currentPeriodStart = this.reportCalculator.getMonthStart();
+                    this.currentPeriodEnd = this.reportCalculator.getMonthEnd();
+                }
             }
 
             // Charger toutes les données nécessaires pour la période
@@ -1006,6 +1008,9 @@ class App {
      */
     async changePeriodType(periodType) {
         this.currentPeriodType = periodType;
+        // Réinitialiser les dates lors du changement de type
+        this.currentPeriodStart = null;
+        this.currentPeriodEnd = null;
         await this.loadCurrentReport();
     }
 
