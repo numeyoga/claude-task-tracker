@@ -1053,6 +1053,11 @@ class App {
             return await this.loadDayData(date);
         };
 
+        // Clic sur le temps de présence pour éditer les pointages
+        this.reportsUI.onPresenceTimeClick = async (date) => {
+            await this.openDayEntriesManagement(date);
+        };
+
         console.log('✅ Écouteurs d\'événements des rapports configurés');
     }
 
@@ -1141,6 +1146,30 @@ class App {
 
         this.sessionsManagementUI.show();
         await this.loadAllSessions();
+    }
+
+    /**
+     * Ouvre la vue de gestion des entrées pour un jour spécifique
+     * @param {string} date - Date au format YYYY-MM-DD
+     */
+    async openDayEntriesManagement(date) {
+        // Convertir la date en Date objects
+        const dateObj = new Date(date + 'T12:00:00');
+
+        // Créer un label lisible pour la date
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateLabel = dateObj.toLocaleDateString('fr-FR', options);
+        const formattedLabel = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
+
+        // Définir le filtre de période pour un seul jour
+        this.entriesManagementUI.setPeriodFilter({
+            startDate: dateObj,
+            endDate: dateObj,
+            label: formattedLabel
+        });
+
+        this.entriesManagementUI.show();
+        await this.loadAllEntries();
     }
 
     /**

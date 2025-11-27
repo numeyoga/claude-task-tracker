@@ -1399,6 +1399,19 @@ body {
     font-weight: 500;
 }
 
+.weekly-table__total-presence--clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.weekly-table__total-presence--clickable:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
 .weekly-table__header-content {
     display: flex;
     align-items: center;
