@@ -28,6 +28,7 @@ export class ReportsUI {
         this.onPeriodTypeChange = null;
         this.onPeriodNavigate = null;
         this.onDayTimelineRequest = null; // Callback pour charger les données d'un jour
+        this.onPresenceTimeClick = null; // Callback pour gérer le clic sur le temps de présence
     }
 
     /**
@@ -388,8 +389,17 @@ export class ReportsUI {
             }, formatDuration(day.projectTime));
 
             const presenceTimeDiv = createElement('div', {
-                class: 'weekly-table__total-presence'
+                class: 'weekly-table__total-presence weekly-table__total-presence--clickable',
+                'data-date': day.date,
+                title: 'Cliquez pour modifier les pointages de ce jour'
             }, formatDuration(day.presenceTime));
+
+            // Ajouter un event listener pour rendre le temps de présence cliquable
+            presenceTimeDiv.addEventListener('click', () => {
+                if (this.onPresenceTimeClick && day.hasEntries) {
+                    this.onPresenceTimeClick(day.date);
+                }
+            });
 
             cell.appendChild(projectTimeDiv);
             cell.appendChild(presenceTimeDiv);
@@ -529,6 +539,9 @@ export class ReportsUI {
             const presenceTimeDiv = createElement('div', {
                 class: 'weekly-table__total-presence'
             }, formatDuration(week.presenceTime));
+
+            // Note: Pour la vue mensuelle, on ne rend pas le temps de présence cliquable
+            // car il représente une semaine entière, pas un jour spécifique
 
             cell.appendChild(projectTimeDiv);
             cell.appendChild(presenceTimeDiv);
