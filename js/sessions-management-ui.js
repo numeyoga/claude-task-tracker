@@ -11,6 +11,7 @@ export class SessionsManagementUI {
         this.listContainer = null;
         this.closeBtn = null;
         this.infoElement = null;
+        this.addEntryBtn = null;
 
         // Filtre de période
         this.periodFilter = null; // { startDate: Date, endDate: Date, label: string }
@@ -29,6 +30,7 @@ export class SessionsManagementUI {
         this.listContainer = document.getElementById('all-entries-list');
         this.closeBtn = document.getElementById('close-entries-management-btn');
         this.infoElement = this.section?.querySelector('.entries-management-section__info p');
+        this.addEntryBtn = document.getElementById('add-entry-btn');
 
         this.setupEventListeners();
 
@@ -84,6 +86,11 @@ export class SessionsManagementUI {
             this.section.classList.add('entries-management-section--visible');
             document.body.style.overflow = 'hidden'; // Empêche le scroll du body
 
+            // Masquer le bouton "Ajouter un pointage" car on gère des sessions, pas des pointages
+            if (this.addEntryBtn) {
+                this.addEntryBtn.style.display = 'none';
+            }
+
             // Charger les sessions
             if (this.onRefresh) {
                 this.onRefresh();
@@ -98,6 +105,11 @@ export class SessionsManagementUI {
         if (this.section) {
             this.section.classList.remove('entries-management-section--visible');
             document.body.style.overflow = ''; // Restore le scroll du body
+
+            // Restaurer la visibilité du bouton pour la prochaine utilisation par EntriesManagementUI
+            if (this.addEntryBtn) {
+                this.addEntryBtn.style.display = '';
+            }
         }
     }
 
