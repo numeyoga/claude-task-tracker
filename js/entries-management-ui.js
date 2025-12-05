@@ -138,6 +138,11 @@ export class EntriesManagementUI {
             this.section.classList.add('entries-management-section--visible');
             document.body.style.overflow = 'hidden'; // Empêche le scroll du body
 
+            // S'assurer que le bouton "Ajouter un pointage" est visible
+            if (this.addEntryBtn) {
+                this.addEntryBtn.style.display = '';
+            }
+
             // Charger les entrées
             if (this.onRefresh) {
                 this.onRefresh();
