@@ -12,6 +12,13 @@ export class EntriesManagementUI {
         this.listContainer = null;
         this.closeBtn = null;
         this.infoElement = null;
+        this.addEntryBtn = null;
+
+        // Modal d'ajout de pointage
+        this.addEntryModal = null;
+        this.addEntryForm = null;
+        this.closeAddEntryModalBtn = null;
+        this.cancelAddEntryBtn = null;
 
         // Filtre de période
         this.periodFilter = null; // { startDate: Date, endDate: Date, label: string }
@@ -19,6 +26,7 @@ export class EntriesManagementUI {
         // Callbacks
         this.onEditEntry = null;
         this.onDeleteEntry = null;
+        this.onAddEntry = null;
         this.onRefresh = null;
     }
 
@@ -30,6 +38,13 @@ export class EntriesManagementUI {
         this.listContainer = document.getElementById('all-entries-list');
         this.closeBtn = document.getElementById('close-entries-management-btn');
         this.infoElement = this.section?.querySelector('.entries-management-section__info p');
+        this.addEntryBtn = document.getElementById('add-entry-btn');
+
+        // Éléments du modal d'ajout
+        this.addEntryModal = document.getElementById('add-entry-modal');
+        this.addEntryForm = document.getElementById('add-entry-form');
+        this.closeAddEntryModalBtn = document.getElementById('close-add-entry-modal-btn');
+        this.cancelAddEntryBtn = document.getElementById('cancel-add-entry-btn');
 
         this.setupEventListeners();
 
@@ -44,6 +59,44 @@ export class EntriesManagementUI {
             this.closeBtn.addEventListener('click', () => {
                 this.hide();
             });
+        }
+
+        // Bouton d'ajout de pointage
+        if (this.addEntryBtn) {
+            this.addEntryBtn.addEventListener('click', () => {
+                this.showAddEntryModal();
+            });
+        }
+
+        // Fermeture du modal d'ajout
+        if (this.closeAddEntryModalBtn) {
+            this.closeAddEntryModalBtn.addEventListener('click', () => {
+                this.hideAddEntryModal();
+            });
+        }
+
+        if (this.cancelAddEntryBtn) {
+            this.cancelAddEntryBtn.addEventListener('click', () => {
+                this.hideAddEntryModal();
+            });
+        }
+
+        // Soumission du formulaire d'ajout
+        if (this.addEntryForm) {
+            this.addEntryForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleAddEntry();
+            });
+        }
+
+        // Fermeture du modal en cliquant sur l'overlay
+        if (this.addEntryModal) {
+            const overlay = this.addEntryModal.querySelector('.modal__overlay');
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    this.hideAddEntryModal();
+                });
+            }
         }
     }
 
@@ -366,5 +419,96 @@ export class EntriesManagementUI {
                 document.body.removeChild(toast);
             }, 300);
         }, 3000);
+    }
+
+    /**
+     * Affiche le modal d'ajout de pointage
+     */
+    showAddEntryModal() {
+        if (!this.addEntryModal) return;
+
+        // Initialiser les valeurs par défaut
+        const dateInput = document.getElementById('entry-date');
+        const timeInput = document.getElementById('entry-time');
+        const typeSelect = document.getElementById('entry-type');
+
+        if (dateInput) {
+            // Définir la date par défaut à aujourd'hui
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+            dateInput.max = today.toISOString().split('T')[0]; // Empêcher les dates futures
+        }
+
+        if (timeInput) {
+            // Définir l'heure par défaut à maintenant
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeInput.value = `${hours}:${minutes}`;
+        }
+
+        if (typeSelect) {
+            typeSelect.value = '';
+        }
+
+        // Afficher le modal
+        this.addEntryModal.classList.add('modal--active');
+    }
+
+    /**
+     * Cache le modal d'ajout de pointage
+     */
+    hideAddEntryModal() {
+        if (!this.addEntryModal) return;
+
+        this.addEntryModal.classList.remove('modal--active');
+
+        // Réinitialiser le formulaire
+        if (this.addEntryForm) {
+            this.addEntryForm.reset();
+        }
+    }
+
+    /**
+     * Gère l'ajout d'un nouveau pointage
+     */
+    handleAddEntry() {
+        const dateInput = document.getElementById('entry-date');
+        const timeInput = document.getElementById('entry-time');
+        const typeSelect = document.getElementById('entry-type');
+
+        if (!dateInput || !timeInput || !typeSelect) {
+            this.showError('Formulaire invalide');
+            return;
+        }
+
+        const dateValue = dateInput.value;
+        const timeValue = timeInput.value;
+        const typeValue = typeSelect.value;
+
+        if (!dateValue || !timeValue || !typeValue) {
+            this.showError('Veuillez remplir tous les champs');
+            return;
+        }
+
+        // Créer le timestamp
+        const timestamp = new Date(`${dateValue}T${timeValue}:00`);
+
+        // Vérifier que le timestamp n'est pas dans le futur
+        if (timestamp > new Date()) {
+            this.showError('Le pointage ne peut pas être dans le futur');
+            return;
+        }
+
+        // Appeler le callback avec les données
+        if (this.onAddEntry) {
+            this.onAddEntry({
+                type: typeValue,
+                timestamp: timestamp
+            });
+        }
+
+        // Fermer le modal
+        this.hideAddEntryModal();
     }
 }

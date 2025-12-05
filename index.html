@@ -230,6 +230,13 @@
                 <p>Toutes vos entrées de pointage dans l'ordre antéchronologique (du plus récent au plus ancien).</p>
             </div>
 
+            <!-- Bouton d'ajout de pointage -->
+            <div class="entries-management-section__actions">
+                <button id="add-entry-btn" class="entries-management-section__add-btn" title="Ajouter un pointage">
+                    ➕ Ajouter un pointage
+                </button>
+            </div>
+
             <!-- Liste des entrées -->
             <div id="all-entries-list" class="all-entries-list">
                 <div class="all-entries-list__empty">Chargement...</div>
@@ -286,6 +293,47 @@
                 <div id="day-timeline-modal-content" class="day-timeline-modal-content">
                     <!-- La timeline sera ajoutée ici dynamiquement -->
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour ajouter un pointage -->
+    <div id="add-entry-modal" class="modal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title">Ajouter un pointage</h3>
+                <button id="close-add-entry-modal-btn" class="modal__close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal__body">
+                <form id="add-entry-form" class="entry-form">
+                    <div class="entry-form__field">
+                        <label for="entry-date" class="entry-form__label">Date</label>
+                        <input type="date" id="entry-date" class="entry-form__input" required>
+                    </div>
+                    <div class="entry-form__field">
+                        <label for="entry-time" class="entry-form__label">Heure</label>
+                        <input type="time" id="entry-time" class="entry-form__input" required>
+                    </div>
+                    <div class="entry-form__field">
+                        <label for="entry-type" class="entry-form__label">Type de pointage</label>
+                        <select id="entry-type" class="entry-form__select" required>
+                            <option value="">-- Sélectionner --</option>
+                            <option value="clock-in">🟢 Arrivée</option>
+                            <option value="break-start">⏸️ Début pause</option>
+                            <option value="break-end">▶️ Fin pause</option>
+                            <option value="clock-out">🔴 Départ</option>
+                        </select>
+                    </div>
+                    <div class="entry-form__actions">
+                        <button type="button" id="cancel-add-entry-btn" class="entry-form__btn entry-form__btn--cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" class="entry-form__btn entry-form__btn--submit">
+                            Ajouter
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

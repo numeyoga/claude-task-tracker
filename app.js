@@ -374,6 +374,39 @@ class App {
         }
     }
 
+    /**
+     * Ajoute un nouveau pointage
+     * @param {Object} entryData - Données du pointage (type, timestamp)
+     */
+    async addEntry(entryData) {
+        try {
+            // Créer la nouvelle entrée
+            const entry = new TimeEntry(entryData.type, entryData.timestamp);
+
+            // Sauvegarder dans IndexedDB
+            await this.storage.saveEntry(entry);
+
+            // Recharger les données du jour si c'est aujourd'hui
+            const entryDate = entry.date;
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+
+            if (entryDate === todayStr) {
+                await this.loadTodayData();
+            }
+
+            // Mettre à jour TOUS les affichages
+            await this.updateAllDisplays();
+
+            this.ui.showSuccess('Pointage ajouté');
+
+            console.log('✅ Pointage ajouté:', entry.id);
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'ajout:', error);
+            this.ui.showError(error.message || 'Erreur lors de l\'ajout du pointage');
+        }
+    }
+
     // ======================
     // Mise à jour de l'interface
     // ======================
@@ -1099,6 +1132,13 @@ class App {
         this.entriesManagementUI.onDeleteEntry = async (entry) => {
             await this.deleteEntry(entry);
             // Recharger les entrées après suppression
+            await this.loadAllEntries();
+        };
+
+        // Ajouter une nouvelle entrée
+        this.entriesManagementUI.onAddEntry = async (entryData) => {
+            await this.addEntry(entryData);
+            // Recharger les entrées après ajout
             await this.loadAllEntries();
         };
 
