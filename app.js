@@ -452,6 +452,16 @@ class App {
         // Si le modal est ouvert, le rafraîchir
         this.refreshModalIfOpen();
 
+        // Si la section de gestion des entrées est visible, la rafraîchir
+        if (this.entriesManagementUI.section?.classList.contains('entries-management-section--visible')) {
+            await this.loadAllEntries();
+        }
+
+        // Si la section de gestion des sessions est visible, la rafraîchir
+        if (this.sessionsManagementUI.section?.classList.contains('entries-management-section--visible')) {
+            await this.loadAllSessions();
+        }
+
         // Rafraîchir le rapport hebdomadaire pour refléter les changements immédiatement
         await this.loadCurrentReport();
     }
