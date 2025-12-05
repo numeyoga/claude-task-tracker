@@ -457,7 +457,7 @@ export class EntriesManagementUI {
         }
 
         // Afficher le modal
-        this.addEntryModal.classList.add('modal--active');
+        this.addEntryModal.classList.add('modal--visible');
     }
 
     /**
@@ -466,7 +466,7 @@ export class EntriesManagementUI {
     hideAddEntryModal() {
         if (!this.addEntryModal) return;
 
-        this.addEntryModal.classList.remove('modal--active');
+        this.addEntryModal.classList.remove('modal--visible');
 
         // Réinitialiser le formulaire
         if (this.addEntryForm) {
