@@ -16,6 +16,6 @@ Cette application est conçue EXCLUSIVEMENT pour une utilisation desktop (ordina
 
 **Technologies utilisées :**
 - HTML5, CSS3 (vanilla, méthodologie BEM)
-- JavaScript ES6+ (modules natifs, pas de framework)
+- JavaScript ES6+ (modules natifs, pas de framework, **paradigme fonctionnel à 100%**)
 - IndexedDB pour le stockage local
 - Architecture modulaire et orientée composants
