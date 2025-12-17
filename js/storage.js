@@ -510,11 +510,11 @@ export class StorageService {
     }
 
     /**
-     * Récupère la session en cours (non terminée) s'il y en a une
-     * @returns {Promise<ProjectSession|null>} Session en cours ou null
+     * Récupère toutes les sessions en cours (non terminées)
+     * @returns {Promise<ProjectSession[]>} Sessions en cours
      * @throws {Error} Si la récupération échoue
      */
-    async getCurrentSession() {
+    async getCurrentSessions() {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([STORES.PROJECT_SESSIONS], 'readonly');
             const store = transaction.objectStore(STORES.PROJECT_SESSIONS);
@@ -526,18 +526,23 @@ export class StorageService {
                     .map(data => ProjectSession.fromJSON(data))
                     .filter(session => session.isRunning());
 
-                // Il ne devrait y avoir qu'une seule session en cours
-                if (sessions.length > 0) {
-                    resolve(sessions[0]);
-                } else {
-                    resolve(null);
-                }
+                resolve(sessions);
             };
 
             request.onerror = () => {
-                reject(new Error('Erreur lors de la récupération de la session en cours'));
+                reject(new Error('Erreur lors de la récupération des sessions en cours'));
             };
         });
+    }
+
+    /**
+     * Récupère la première session en cours (pour compatibilité)
+     * @returns {Promise<ProjectSession|null>} Session en cours ou null
+     * @throws {Error} Si la récupération échoue
+     */
+    async getCurrentSession() {
+        const sessions = await this.getCurrentSessions();
+        return sessions.length > 0 ? sessions[0] : null;
     }
 
     /**
