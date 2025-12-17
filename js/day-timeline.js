@@ -191,11 +191,26 @@ export class DayTimeline {
      * @private
      */
     #buildSegments(startTime, endTime, entries, sessions, projects) {
-        const segments = [];
-        const timeline = [];
+        // Collecter les pauses
+        const breaks = this.#collectBreaks(entries);
 
-        // Ajouter toutes les activités avec leur type
-        // Ajouter les pauses
+        // Collecter les sessions de projet avec leurs infos
+        const projectSessions = this.#collectProjectSessions(sessions, projects);
+
+        // Construire les segments avec détection des chevauchements
+        const segments = this.#buildSegmentsWithOverlaps(startTime, endTime, breaks, projectSessions);
+
+        return segments;
+    }
+
+    /**
+     * Collecte les pauses à partir des pointages
+     * @param {Object[]} entries - Pointages
+     * @returns {Object[]} Liste des pauses
+     * @private
+     */
+    #collectBreaks(entries) {
+        const breaks = [];
         const sortedEntries = [...entries].sort((a, b) =>
             new Date(a.timestamp) - new Date(b.timestamp)
         );
@@ -205,7 +220,7 @@ export class DayTimeline {
             if (isBreakStart(entry.type)) {
                 currentBreakStart = new Date(entry.timestamp);
             } else if (isBreakEnd(entry.type) && currentBreakStart) {
-                timeline.push({
+                breaks.push({
                     type: 'break',
                     start: currentBreakStart,
                     end: new Date(entry.timestamp),
@@ -217,61 +232,193 @@ export class DayTimeline {
 
         // Si une pause est encore en cours
         if (currentBreakStart) {
-            timeline.push({
+            breaks.push({
                 type: 'break',
                 start: currentBreakStart,
-                end: new Date(), // Pause en cours
+                end: new Date(),
                 label: 'Pause (en cours)'
             });
         }
 
-        // Ajouter les sessions de projet
-        sessions.forEach(session => {
-            const project = projects.find(p => p.id === session.projectId);
-            const sessionStart = new Date(session.startTime);
-            const sessionEnd = session.endTime ? new Date(session.endTime) : new Date();
+        return breaks;
+    }
 
-            timeline.push({
-                type: 'project',
-                start: sessionStart,
-                end: sessionEnd,
-                label: project?.name || 'Projet inconnu',
-                projectId: session.projectId
-            });
+    /**
+     * Collecte les sessions de projet
+     * @param {Object[]} sessions - Sessions
+     * @param {Object[]} projects - Projets
+     * @returns {Object[]} Sessions avec infos projet
+     * @private
+     */
+    #collectProjectSessions(sessions, projects) {
+        return sessions.map(session => {
+            const project = projects.find(p => p.id === session.projectId);
+            return {
+                start: new Date(session.startTime),
+                end: session.endTime ? new Date(session.endTime) : new Date(),
+                projectId: session.projectId,
+                projectName: project?.name || 'Projet inconnu',
+                projectColor: project?.color || '#3b82f6'
+            };
+        });
+    }
+
+    /**
+     * Construit les segments avec détection des chevauchements multi-projets
+     * @param {Date} startTime - Heure de début
+     * @param {Date} endTime - Heure de fin
+     * @param {Object[]} breaks - Pauses
+     * @param {Object[]} projectSessions - Sessions de projet
+     * @returns {Object[]} Segments
+     * @private
+     */
+    #buildSegmentsWithOverlaps(startTime, endTime, breaks, projectSessions) {
+        // Collecter tous les points de temps importants
+        const timePoints = new Set();
+        timePoints.add(startTime.getTime());
+        timePoints.add(endTime.getTime());
+
+        // Ajouter les débuts/fins de pauses
+        breaks.forEach(b => {
+            timePoints.add(b.start.getTime());
+            timePoints.add(b.end.getTime());
         });
 
-        // Trier par heure de début
-        timeline.sort((a, b) => a.start - b.start);
+        // Ajouter les débuts/fins de sessions
+        projectSessions.forEach(s => {
+            timePoints.add(s.start.getTime());
+            timePoints.add(s.end.getTime());
+        });
 
-        // Remplir les trous avec des segments "idle"
-        let currentTime = startTime;
-        timeline.forEach(item => {
-            // S'il y a un trou avant cet item
-            if (item.start > currentTime) {
+        // Trier les points de temps
+        const sortedTimes = Array.from(timePoints).sort((a, b) => a - b);
+
+        // Construire les segments entre chaque paire de points
+        const segments = [];
+        for (let i = 0; i < sortedTimes.length - 1; i++) {
+            const segStart = new Date(sortedTimes[i]);
+            const segEnd = new Date(sortedTimes[i + 1]);
+
+            // Ignorer les segments de durée nulle
+            if (segStart.getTime() === segEnd.getTime()) continue;
+
+            // Vérifier si c'est une pause
+            const isBreak = breaks.some(b =>
+                segStart >= b.start && segEnd <= b.end
+            );
+
+            if (isBreak) {
+                const breakInfo = breaks.find(b => segStart >= b.start && segEnd <= b.end);
                 segments.push({
-                    type: 'idle',
-                    start: currentTime,
-                    end: item.start,
-                    label: 'Inactif'
+                    type: 'break',
+                    start: segStart,
+                    end: segEnd,
+                    label: breakInfo?.label || 'Pause'
                 });
+                continue;
             }
 
-            // Ajouter l'item
-            segments.push(item);
-            currentTime = item.end > currentTime ? item.end : currentTime;
-        });
+            // Trouver les projets actifs pendant ce segment
+            const activeProjects = projectSessions.filter(s =>
+                segStart >= s.start && segEnd <= s.end
+            );
 
-        // S'il reste du temps après la dernière activité
-        if (currentTime < endTime) {
-            segments.push({
-                type: 'idle',
-                start: currentTime,
-                end: endTime,
-                label: 'Inactif'
-            });
+            if (activeProjects.length === 0) {
+                // Aucun projet actif = inactif
+                segments.push({
+                    type: 'idle',
+                    start: segStart,
+                    end: segEnd,
+                    label: 'Inactif'
+                });
+            } else if (activeProjects.length === 1) {
+                // Un seul projet
+                segments.push({
+                    type: 'project',
+                    start: segStart,
+                    end: segEnd,
+                    label: activeProjects[0].projectName,
+                    projectId: activeProjects[0].projectId,
+                    projectColor: activeProjects[0].projectColor
+                });
+            } else {
+                // Multi-projets !
+                segments.push({
+                    type: 'multiproject',
+                    start: segStart,
+                    end: segEnd,
+                    label: `${activeProjects.length} projets`,
+                    projects: activeProjects.map(p => ({
+                        id: p.projectId,
+                        name: p.projectName,
+                        color: p.projectColor
+                    }))
+                });
+            }
         }
 
-        return segments;
+        // Fusionner les segments adjacents du même type
+        return this.#mergeAdjacentSegments(segments);
+    }
+
+    /**
+     * Fusionne les segments adjacents identiques
+     * @param {Object[]} segments - Segments à fusionner
+     * @returns {Object[]} Segments fusionnés
+     * @private
+     */
+    #mergeAdjacentSegments(segments) {
+        if (segments.length === 0) return segments;
+
+        const merged = [];
+        let current = { ...segments[0] };
+
+        for (let i = 1; i < segments.length; i++) {
+            const next = segments[i];
+            const canMerge = this.#canMergeSegments(current, next);
+
+            if (canMerge) {
+                // Étendre le segment courant
+                current.end = next.end;
+            } else {
+                // Sauvegarder et commencer un nouveau segment
+                merged.push(current);
+                current = { ...next };
+            }
+        }
+
+        // Ne pas oublier le dernier segment
+        merged.push(current);
+
+        return merged;
+    }
+
+    /**
+     * Vérifie si deux segments peuvent être fusionnés
+     * @param {Object} seg1 - Premier segment
+     * @param {Object} seg2 - Deuxième segment
+     * @returns {boolean} Peut être fusionné
+     * @private
+     */
+    #canMergeSegments(seg1, seg2) {
+        // Même type requis
+        if (seg1.type !== seg2.type) return false;
+
+        // Pour les projets simples, même projet requis
+        if (seg1.type === 'project') {
+            return seg1.projectId === seg2.projectId;
+        }
+
+        // Pour les multi-projets, mêmes projets requis
+        if (seg1.type === 'multiproject') {
+            if (seg1.projects.length !== seg2.projects.length) return false;
+            const ids1 = seg1.projects.map(p => p.id).sort();
+            const ids2 = seg2.projects.map(p => p.id).sort();
+            return ids1.every((id, idx) => id === ids2[idx]);
+        }
+
+        // Pour idle et break, toujours fusionnable
+        return true;
     }
 
     /**
@@ -293,20 +440,92 @@ export class DayTimeline {
         if (widthPercent < 1) return '';
 
         const duration = this.#formatDuration(segmentDuration);
-        const tooltip = `${segment.label}\n${formatTime(segment.start)} - ${formatTime(segment.end)}\n${duration}`;
+
+        // Générer le contenu du tooltip selon le type de segment
+        const tooltipContent = this.#renderTooltipContent(segment, duration);
+
+        // Style personnalisé pour les projets
+        const customStyle = this.#getSegmentStyle(segment);
 
         return `
             <div class="day-timeline__segment day-timeline__segment--${segment.type}"
-                 style="left: ${leftPercent}%; width: ${widthPercent}%;"
-                 title="${tooltip}">
-                <div class="day-timeline__tooltip">
-                    ${segment.label}<br>
-                    ${formatTime(segment.start)} - ${formatTime(segment.end)}<br>
-                    ${duration}
+                 style="left: ${leftPercent}%; width: ${widthPercent}%;${customStyle}">
+                <div class="day-timeline__tooltip${segment.type === 'multiproject' ? ' day-timeline__tooltip--multiproject' : ''}">
+                    ${tooltipContent}
                 </div>
                 ${widthPercent > 8 ? `<span class="day-timeline__segment-label">${segment.label}</span>` : ''}
             </div>
         `;
+    }
+
+    /**
+     * Génère le contenu du tooltip selon le type de segment
+     * @param {Object} segment - Segment
+     * @param {string} duration - Durée formatée
+     * @returns {string} HTML du tooltip
+     * @private
+     */
+    #renderTooltipContent(segment, duration) {
+        const timeRange = `${formatTime(segment.start)} - ${formatTime(segment.end)}`;
+
+        if (segment.type === 'multiproject') {
+            // Tooltip enrichi pour multi-projets
+            const projectsList = segment.projects.map(p =>
+                `<span class="day-timeline__tooltip-project">
+                    <span class="day-timeline__tooltip-project-dot" style="background-color: ${p.color};"></span>
+                    ${p.name}
+                </span>`
+            ).join('');
+
+            return `
+                <div class="day-timeline__tooltip-header">
+                    <span class="day-timeline__tooltip-icon">⚡</span>
+                    <strong>${segment.projects.length} projets en parallèle</strong>
+                </div>
+                <div class="day-timeline__tooltip-projects">
+                    ${projectsList}
+                </div>
+                <div class="day-timeline__tooltip-time">
+                    ${timeRange}
+                </div>
+                <div class="day-timeline__tooltip-duration">
+                    ${duration}
+                </div>
+            `;
+        }
+
+        // Tooltip standard pour les autres types
+        return `
+            ${segment.label}<br>
+            ${timeRange}<br>
+            ${duration}
+        `;
+    }
+
+    /**
+     * Génère le style personnalisé pour un segment
+     * @param {Object} segment - Segment
+     * @returns {string} Style inline
+     * @private
+     */
+    #getSegmentStyle(segment) {
+        if (segment.type === 'project' && segment.projectColor) {
+            return ` --project-color: ${segment.projectColor};`;
+        }
+
+        if (segment.type === 'multiproject' && segment.projects) {
+            // Créer un dégradé avec les couleurs des projets
+            const colors = segment.projects.map(p => p.color);
+            if (colors.length === 2) {
+                return ` --gradient: linear-gradient(135deg, ${colors[0]} 0%, ${colors[0]} 50%, ${colors[1]} 50%, ${colors[1]} 100%);`;
+            } else if (colors.length >= 3) {
+                const step = 100 / colors.length;
+                const stops = colors.map((c, i) => `${c} ${i * step}%, ${c} ${(i + 1) * step}%`).join(', ');
+                return ` --gradient: linear-gradient(135deg, ${stops});`;
+            }
+        }
+
+        return '';
     }
 
     /**
