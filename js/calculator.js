@@ -282,7 +282,7 @@ export class TimeCalculator {
      * Calcule le temps passé par projet pour une journée
      * @param {ProjectSession[]} sessions - Liste des sessions de la journée
      * @param {Project[]} projects - Liste des projets
-     * @returns {Object[]} Liste d'objets {projectId, projectName, duration, percentage}
+     * @returns {Object[]} Liste d'objets {projectId, projectName, duration, percentage, overlapDuration}
      */
     calculateProjectStats(sessions, projects) {
         if (!sessions || sessions.length === 0) {
@@ -302,6 +302,9 @@ export class TimeCalculator {
         // Calculer le temps total de toutes les sessions
         const totalTime = sessions.reduce((sum, session) => sum + session.getDuration(), 0);
 
+        // Calculer les chevauchements
+        const overlaps = this.calculateOverlaps(sessions);
+
         // Créer les statistiques par projet
         const stats = [];
 
@@ -311,12 +314,17 @@ export class TimeCalculator {
             const duration = this.calculateProjectTime(projectSessions);
             const percentage = totalTime > 0 ? Math.round((duration / totalTime) * 100) : 0;
 
+            // Calculer le temps de chevauchement pour ce projet
+            const overlapDuration = this.calculateOverlapForProject(projectSessions, sessions);
+
             stats.push({
                 projectId,
                 projectName: project ? project.name : 'Projet inconnu',
                 duration,
                 percentage,
-                isRunning: projectSessions.some(s => s.isRunning())
+                isRunning: projectSessions.some(s => s.isRunning()),
+                overlapDuration, // Nouveau : temps passé en parallèle avec d'autres projets
+                hasOverlap: overlapDuration > 0
             });
         });
 
@@ -324,6 +332,110 @@ export class TimeCalculator {
         stats.sort((a, b) => b.duration - a.duration);
 
         return stats;
+    }
+
+    /**
+     * Calcule toutes les périodes de chevauchement entre sessions
+     * @param {ProjectSession[]} sessions - Liste des sessions
+     * @returns {Object[]} Liste des chevauchements {start, end, sessions}
+     */
+    calculateOverlaps(sessions) {
+        if (!sessions || sessions.length < 2) {
+            return [];
+        }
+
+        const overlaps = [];
+
+        // Comparer chaque paire de sessions
+        for (let i = 0; i < sessions.length; i++) {
+            for (let j = i + 1; j < sessions.length; j++) {
+                const session1 = sessions[i];
+                const session2 = sessions[j];
+
+                // Obtenir les temps de début et de fin
+                const start1 = session1.startTime.getTime();
+                const end1 = session1.endTime ? session1.endTime.getTime() : Date.now();
+                const start2 = session2.startTime.getTime();
+                const end2 = session2.endTime ? session2.endTime.getTime() : Date.now();
+
+                // Vérifier s'il y a chevauchement
+                const overlapStart = Math.max(start1, start2);
+                const overlapEnd = Math.min(end1, end2);
+
+                if (overlapStart < overlapEnd) {
+                    overlaps.push({
+                        start: new Date(overlapStart),
+                        end: new Date(overlapEnd),
+                        duration: overlapEnd - overlapStart,
+                        sessions: [session1, session2]
+                    });
+                }
+            }
+        }
+
+        return overlaps;
+    }
+
+    /**
+     * Calcule le temps de chevauchement pour un projet spécifique
+     * @param {ProjectSession[]} projectSessions - Sessions du projet
+     * @param {ProjectSession[]} allSessions - Toutes les sessions
+     * @returns {number} Durée totale de chevauchement en ms
+     */
+    calculateOverlapForProject(projectSessions, allSessions) {
+        let totalOverlap = 0;
+
+        projectSessions.forEach(session => {
+            // Trouver les autres sessions qui chevauchent celle-ci
+            const otherSessions = allSessions.filter(s =>
+                s.id !== session.id && s.projectId !== session.projectId
+            );
+
+            otherSessions.forEach(otherSession => {
+                const start1 = session.startTime.getTime();
+                const end1 = session.endTime ? session.endTime.getTime() : Date.now();
+                const start2 = otherSession.startTime.getTime();
+                const end2 = otherSession.endTime ? otherSession.endTime.getTime() : Date.now();
+
+                const overlapStart = Math.max(start1, start2);
+                const overlapEnd = Math.min(end1, end2);
+
+                if (overlapStart < overlapEnd) {
+                    totalOverlap += (overlapEnd - overlapStart);
+                }
+            });
+        });
+
+        return totalOverlap;
+    }
+
+    /**
+     * Calcule le temps total de chevauchement pour toutes les sessions
+     * @param {ProjectSession[]} sessions - Liste des sessions
+     * @returns {number} Durée totale de chevauchement en ms (sans double comptage)
+     */
+    calculateTotalOverlapTime(sessions) {
+        const overlaps = this.calculateOverlaps(sessions);
+        if (overlaps.length === 0) return 0;
+
+        // Fusionner les périodes qui se chevauchent pour éviter le double comptage
+        const sortedOverlaps = overlaps.sort((a, b) => a.start.getTime() - b.start.getTime());
+        const mergedPeriods = [];
+
+        sortedOverlaps.forEach(overlap => {
+            const last = mergedPeriods[mergedPeriods.length - 1];
+            if (last && overlap.start.getTime() <= last.end.getTime()) {
+                // Fusionner avec la période précédente
+                last.end = new Date(Math.max(last.end.getTime(), overlap.end.getTime()));
+            } else {
+                // Nouvelle période
+                mergedPeriods.push({ start: overlap.start, end: overlap.end });
+            }
+        });
+
+        // Calculer le temps total
+        return mergedPeriods.reduce((total, period) =>
+            total + (period.end.getTime() - period.start.getTime()), 0);
     }
 
     /**

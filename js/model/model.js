@@ -33,10 +33,16 @@ export const initialModel = Object.freeze({
     sessions: [],
 
     /**
-     * Session de projet en cours (si une est active)
-     * @type {ProjectSession|null}
+     * Sessions de projet en cours (peut contenir plusieurs sessions si multiProjectMode est actif)
+     * @type {Array<ProjectSession>}
      */
-    currentSession: null,
+    currentSessions: [],
+
+    /**
+     * Mode multi-projet activé (permet plusieurs sessions simultanées)
+     * @type {boolean}
+     */
+    multiProjectMode: false,
 
     // ===== État UI =====
 
@@ -240,17 +246,38 @@ export const selectors = Object.freeze({
      * @returns {boolean}
      */
     isTimerRunning: (model) =>
-        model.currentSession !== null,
+        model.currentSessions && model.currentSessions.length > 0,
 
     /**
-     * Obtient le projet de la session en cours
+     * Obtient le projet de la première session en cours (pour compatibilité)
      * @param {Object} model - Modèle
      * @returns {Object|null} Projet ou null
      */
     getCurrentProject: (model) => {
-        if (!model.currentSession) return null;
-        return model.projects.find(p => p.id === model.currentSession.projectId) || null;
+        if (!model.currentSessions || model.currentSessions.length === 0) return null;
+        return model.projects.find(p => p.id === model.currentSessions[0].projectId) || null;
     },
+
+    /**
+     * Obtient tous les projets avec des sessions en cours
+     * @param {Object} model - Modèle
+     * @returns {Array} Projets actifs
+     */
+    getCurrentProjects: (model) => {
+        if (!model.currentSessions || model.currentSessions.length === 0) return [];
+        return model.currentSessions
+            .map(session => model.projects.find(p => p.id === session.projectId))
+            .filter(p => p !== undefined);
+    },
+
+    /**
+     * Vérifie si un projet spécifique a une session en cours
+     * @param {Object} model - Modèle
+     * @param {string} projectId - ID du projet
+     * @returns {boolean}
+     */
+    isProjectRunning: (model, projectId) =>
+        model.currentSessions && model.currentSessions.some(s => s.projectId === projectId),
 
     /**
      * Vérifie si l'objectif de 8h est atteint

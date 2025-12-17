@@ -199,26 +199,26 @@ class App {
      */
     async recordEntry(entryType) {
         try {
-            // Si on démarre une pause, arrêter le timer de projet en cours
+            // Si on démarre une pause, arrêter tous les timers de projet en cours
             if (isBreakStart(entryType) && this.timer.isRunning()) {
-                console.log('⏸️ Arrêt automatique du timer de projet lors de la pause');
-                // Sauvegarder l'ID du projet actif pour le redémarrer après la pause
-                const projectId = this.timer.getCurrentProjectId();
-                localStorage.setItem('pausedProjectId', projectId);
-                console.log('💾 Projet sauvegardé pour reprise automatique:', projectId);
+                console.log('⏸️ Arrêt automatique des timers de projet lors de la pause');
+                // Sauvegarder les IDs de tous les projets actifs pour les redémarrer après la pause
+                const projectIds = this.timer.getCurrentProjectIds();
+                localStorage.setItem('pausedProjectIds', JSON.stringify(projectIds));
+                console.log('💾 Projets sauvegardés pour reprise automatique:', projectIds);
 
-                await this.timer.stop();
+                await this.timer.stopAll();
                 await this.updateProjectsUI();
             }
 
-            // Si on pointe son départ, arrêter le timer de projet en cours
+            // Si on pointe son départ, arrêter tous les timers de projet en cours
             if (entryType === ENTRY_TYPES.CLOCK_OUT && this.timer.isRunning()) {
-                console.log('⏹️ Arrêt automatique du timer de projet lors du départ');
+                console.log('⏹️ Arrêt automatique de tous les timers de projet lors du départ');
                 // Créer le timestamp du pointage
                 const clockOutTime = new Date();
-                // Arrêter la session juste avant le pointage (1 seconde avant)
+                // Arrêter toutes les sessions juste avant le pointage (1 seconde avant)
                 const sessionEndTime = new Date(clockOutTime.getTime() - 1000);
-                await this.timer.stop(sessionEndTime);
+                await this.timer.stopAll(sessionEndTime);
                 await this.loadTodaySessions();
 
                 // Créer et enregistrer l'entrée de pointage avec le timestamp correct
@@ -234,33 +234,52 @@ class App {
                 return;
             }
 
-            // Si on termine une pause, redémarrer le projet qui était actif avant la pause
+            // Si on termine une pause, redémarrer les projets qui étaient actifs avant la pause
             if (isBreakEnd(entryType)) {
-                const pausedProjectId = localStorage.getItem('pausedProjectId');
-                if (pausedProjectId) {
-                    console.log('▶️ Reprise automatique du projet après la pause:', pausedProjectId);
+                // Essayer d'abord le nouveau format (tableau), puis l'ancien format (string unique)
+                const pausedProjectIdsStr = localStorage.getItem('pausedProjectIds');
+                const legacyPausedProjectId = localStorage.getItem('pausedProjectId');
+
+                let pausedProjectIds = [];
+                if (pausedProjectIdsStr) {
+                    pausedProjectIds = JSON.parse(pausedProjectIdsStr);
+                } else if (legacyPausedProjectId) {
+                    pausedProjectIds = [legacyPausedProjectId];
+                }
+
+                if (pausedProjectIds.length > 0) {
+                    console.log('▶️ Reprise automatique des projets après la pause:', pausedProjectIds);
                     // Créer l'entrée d'abord
                     const entry = new TimeEntry(entryType);
                     await this.storage.saveEntry(entry);
                     this.todayEntries.push(entry);
 
-                    // Ensuite redémarrer le projet
-                    try {
-                        await this.timer.start(pausedProjectId);
-                        await this.loadTodaySessions();
-                        await this.updateAllDisplays();
+                    // Ensuite redémarrer tous les projets
+                    let restartedCount = 0;
+                    for (const projectId of pausedProjectIds) {
+                        try {
+                            await this.timer.start(projectId);
+                            restartedCount++;
+                        } catch (error) {
+                            // Si le projet n'existe plus ou autre erreur, continuer avec les autres
+                            console.warn('⚠️ Impossible de redémarrer le projet:', projectId, error.message);
+                        }
+                    }
 
-                        // Nettoyer le localStorage
-                        localStorage.removeItem('pausedProjectId');
+                    await this.loadTodaySessions();
+                    await this.updateAllDisplays();
 
-                        this.ui.showSuccess('Fin de pause enregistrée - Projet redémarré');
-                        console.log('✅ Pointage enregistré et projet redémarré:', entryType);
-                    } catch (error) {
-                        // Si le projet n'existe plus, ne pas bloquer
-                        console.warn('⚠️ Impossible de redémarrer le projet:', error.message);
-                        localStorage.removeItem('pausedProjectId');
+                    // Nettoyer le localStorage
+                    localStorage.removeItem('pausedProjectIds');
+                    localStorage.removeItem('pausedProjectId');
 
-                        await this.updateAllDisplays();
+                    if (restartedCount > 0) {
+                        const message = restartedCount > 1
+                            ? `Fin de pause enregistrée - ${restartedCount} projets redémarrés`
+                            : 'Fin de pause enregistrée - Projet redémarré';
+                        this.ui.showSuccess(message);
+                        console.log('✅ Pointage enregistré et projets redémarrés:', entryType);
+                    } else {
                         this.ui.showSuccess('Fin de pause enregistrée');
                         console.log('✅ Pointage enregistré:', entryType);
                     }
@@ -633,13 +652,25 @@ class App {
      */
     async startProject(projectId) {
         try {
-            // Démarrer le timer (ou basculer si déjà en cours)
-            if (this.timer.isRunning()) {
-                await this.timer.switchTo(projectId);
-                this.timerUI.showSuccess('Projet changé');
-            } else {
+            // Vérifier si le projet a déjà une session en cours
+            if (this.timer.isRunningForProject(projectId)) {
+                this.timerUI.showError('Ce projet a déjà un chronomètre en cours');
+                return;
+            }
+
+            // En mode multi-projet, juste ajouter une nouvelle session
+            if (this.timer.isMultiProjectMode()) {
                 await this.timer.start(projectId);
                 this.timerUI.showSuccess('Chronomètre démarré');
+            } else {
+                // Mode mono-projet : basculer si déjà en cours
+                if (this.timer.isRunning()) {
+                    await this.timer.switchTo(projectId);
+                    this.timerUI.showSuccess('Projet changé');
+                } else {
+                    await this.timer.start(projectId);
+                    this.timerUI.showSuccess('Chronomètre démarré');
+                }
             }
 
             // Recharger les sessions et mettre à jour TOUS les affichages
@@ -650,6 +681,51 @@ class App {
         } catch (error) {
             console.error('❌ Erreur lors du démarrage du chronomètre:', error);
             this.timerUI.showError(error.message || 'Erreur lors du démarrage du chronomètre');
+        }
+    }
+
+    /**
+     * Arrête le chronomètre pour un projet spécifique
+     * @param {string} projectId - ID du projet
+     */
+    async stopTimerForProject(projectId) {
+        try {
+            const session = await this.timer.stop(projectId);
+
+            if (session) {
+                // Recharger les sessions et mettre à jour TOUS les affichages
+                await this.loadTodaySessions();
+                await this.updateAllDisplays();
+
+                this.timerUI.showSuccess('Chronomètre arrêté');
+
+                console.log('✅ Chronomètre arrêté pour le projet:', projectId);
+            }
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'arrêt du chronomètre:', error);
+            this.timerUI.showError(error.message || 'Erreur lors de l\'arrêt du chronomètre');
+        }
+    }
+
+    /**
+     * Arrête tous les chronomètres en cours
+     */
+    async stopAllTimers() {
+        try {
+            const sessions = await this.timer.stopAll();
+
+            if (sessions.length > 0) {
+                // Recharger les sessions et mettre à jour TOUS les affichages
+                await this.loadTodaySessions();
+                await this.updateAllDisplays();
+
+                this.timerUI.showSuccess(`${sessions.length} chronomètre(s) arrêté(s)`);
+
+                console.log('✅ Tous les chronomètres arrêtés');
+            }
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'arrêt des chronomètres:', error);
+            this.timerUI.showError(error.message || 'Erreur lors de l\'arrêt des chronomètres');
         }
     }
 
@@ -680,15 +756,32 @@ class App {
      */
     updateTimerUI() {
         // Mettre à jour l'affichage du timer
-        const currentProjectId = this.timer ? this.timer.getCurrentProjectId() : null;
+        const currentSessions = this.timer ? this.timer.getCurrentSessions() : [];
+        const currentProjectIds = this.timer ? this.timer.getCurrentProjectIds() : [];
 
-        if (currentProjectId) {
-            const project = this.projects.find(p => p.id === currentProjectId);
+        if (currentSessions.length > 0) {
+            // Préparer les données des sessions actives pour l'UI
+            const activeSessions = currentSessions.map(session => {
+                const project = this.projects.find(p => p.id === session.projectId);
+                return {
+                    projectId: session.projectId,
+                    projectName: project?.name || 'Projet inconnu',
+                    duration: session.getDuration()
+                };
+            });
+
+            // Mettre à jour la liste des sessions actives dans l'UI
+            this.timerUI.updateActiveSessions(activeSessions);
+
+            // Mettre à jour l'affichage principal du timer (premier projet)
+            const firstProject = this.projects.find(p => p.id === currentProjectIds[0]);
             const duration = this.timer.getElapsedTime();
+            this.timerUI.updateTimer(currentProjectIds[0], firstProject?.name, duration);
 
-            this.timerUI.updateTimer(currentProjectId, project?.name, duration);
-            this.timerUI.updateCurrentProjectIndicator(currentProjectId);
+            // Mettre à jour les indicateurs sur tous les projets actifs
+            this.timerUI.updateCurrentProjectIndicator(currentProjectIds);
         } else {
+            this.timerUI.updateActiveSessions([]);
             this.timerUI.updateTimer(null, null, 0);
             this.timerUI.updateCurrentProjectIndicator(null);
         }
@@ -923,14 +1016,10 @@ class App {
      * Configure les écouteurs d'événements pour le chronomètre
      */
     setupTimerEventListeners() {
-        // Mise à jour du timer (appelé chaque seconde)
+        // Mise à jour du timer (appelé chaque seconde pour chaque session active)
         this.timer.onTick = (projectId, elapsed) => {
-            const project = this.projects.find(p => p.id === projectId);
-            this.timerUI.updateTimer(projectId, project?.name, elapsed);
-
-            // Mettre à jour les statistiques aussi (pour la session en cours)
-            const stats = this.calculator.calculateProjectStats(this.todaySessions, this.projects);
-            this.timerUI.renderStats(stats);
+            // Mettre à jour complètement l'UI du timer (supporte plusieurs sessions)
+            this.updateTimerUI();
 
             // Mettre à jour l'affichage du temps quotidien dans la liste des projets
             this.updateProjectsUI();
@@ -949,9 +1038,30 @@ class App {
             this.updateTimerUI();
         };
 
-        // Bouton d'arrêt du timer
+        // Changement de mode multi-projet
+        this.timer.onModeChange = (enabled) => {
+            console.log(`🔄 Mode multi-projet ${enabled ? 'activé' : 'désactivé'}`);
+            this.updateTimerUI();
+        };
+
+        // Bouton d'arrêt du timer (arrête le premier timer en mode mono-projet)
         this.timerUI.onStopTimer = () => {
             this.stopTimer();
+        };
+
+        // Arrêt d'un timer pour un projet spécifique
+        this.timerUI.onStopTimerForProject = (projectId) => {
+            this.stopTimerForProject(projectId);
+        };
+
+        // Arrêt de tous les timers
+        this.timerUI.onStopAllTimers = () => {
+            this.stopAllTimers();
+        };
+
+        // Toggle du mode multi-projet
+        this.timerUI.onToggleMultiProjectMode = (enabled) => {
+            this.timer.setMultiProjectMode(enabled);
         };
 
         // Récupération des sessions d'un projet pour affichage des détails

@@ -89,9 +89,33 @@
                 <div class="timer-compact__time">
                     <span id="timer-duration" class="timer-compact__duration">0h 00m</span>
                 </div>
-                <button id="stop-timer-btn" class="timer-compact__stop-btn" disabled>
-                    ⏹️ Arrêter
-                </button>
+                <div class="timer-compact__actions">
+                    <button id="stop-timer-btn" class="timer-compact__stop-btn" disabled>
+                        ⏹️ Arrêter
+                    </button>
+                    <button id="stop-all-timers-btn" class="timer-compact__stop-all-btn" disabled title="Arrêter tous les chronomètres">
+                        ⏹️ Tout arrêter
+                    </button>
+                </div>
+                <!-- Toggle mode multi-projet -->
+                <div class="timer-compact__mode-toggle">
+                    <label class="toggle-switch" title="Permet de travailler sur plusieurs projets simultanément">
+                        <input type="checkbox" id="multi-project-toggle">
+                        <span class="toggle-switch__slider"></span>
+                    </label>
+                    <span class="toggle-switch__label">Multi-projet</span>
+                </div>
+            </section>
+
+            <!-- Liste des sessions actives (mode multi-projet) -->
+            <section class="active-sessions" id="active-sessions" style="display: none;">
+                <div class="active-sessions__header">
+                    <span class="active-sessions__title">Sessions actives</span>
+                    <span class="active-sessions__count" id="active-sessions-count">0</span>
+                </div>
+                <div class="active-sessions__list" id="active-sessions-list">
+                    <!-- Sessions actives ajoutées dynamiquement -->
+                </div>
             </section>
 
             <!-- Gestion des projets -->

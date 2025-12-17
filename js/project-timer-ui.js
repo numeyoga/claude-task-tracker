@@ -5,6 +5,7 @@ import { EditSessionPopover } from './popover.js';
 
 /**
  * Gestion de l'interface utilisateur pour le chronomètre de projet
+ * Supporte le mode multi-projet avec plusieurs sessions simultanées
  */
 export class ProjectTimerUI {
     constructor() {
@@ -17,7 +18,13 @@ export class ProjectTimerUI {
             modal: null,
             modalProjectName: null,
             sessionsList: null,
-            closeModalBtn: null
+            closeModalBtn: null,
+            // Nouveaux éléments pour le mode multi-projet
+            multiProjectToggle: null,
+            activeSessionsSection: null,
+            activeSessionsList: null,
+            activeSessionsCount: null,
+            stopAllBtn: null
         };
 
         // État du modal
@@ -27,12 +34,19 @@ export class ProjectTimerUI {
             projectName: null
         };
 
+        // État multi-projet
+        this.multiProjectMode = false;
+        this.activeSessions = []; // Sessions actives en cours
+
         // Callbacks
         this.onStartProject = null;
         this.onStopTimer = null;
-        this.onGetSessionsForProject = null; // Callback pour récupérer les sessions d'un projet
-        this.onEditSession = null; // Callback pour éditer une session
-        this.onDeleteSession = null; // Callback pour supprimer une session
+        this.onStopTimerForProject = null; // Callback pour arrêter un projet spécifique
+        this.onStopAllTimers = null; // Callback pour arrêter tous les timers
+        this.onToggleMultiProjectMode = null; // Callback pour le changement de mode
+        this.onGetSessionsForProject = null;
+        this.onEditSession = null;
+        this.onDeleteSession = null;
     }
 
     /**
@@ -54,6 +68,39 @@ export class ProjectTimerUI {
                 }
             });
         }
+
+        // Bouton pour arrêter tous les timers
+        this.elements.stopAllBtn = document.getElementById('stop-all-timers-btn');
+        if (this.elements.stopAllBtn) {
+            this.elements.stopAllBtn.addEventListener('click', () => {
+                if (this.onStopAllTimers) {
+                    this.onStopAllTimers();
+                }
+            });
+        }
+
+        // Toggle du mode multi-projet
+        this.elements.multiProjectToggle = document.getElementById('multi-project-toggle');
+        if (this.elements.multiProjectToggle) {
+            // Charger l'état initial depuis localStorage
+            this.multiProjectMode = localStorage.getItem('multiProjectMode') === 'true';
+            this.elements.multiProjectToggle.checked = this.multiProjectMode;
+            this.#updateMultiProjectModeUI();
+
+            this.elements.multiProjectToggle.addEventListener('change', (e) => {
+                this.multiProjectMode = e.target.checked;
+                this.#updateMultiProjectModeUI();
+
+                if (this.onToggleMultiProjectMode) {
+                    this.onToggleMultiProjectMode(this.multiProjectMode);
+                }
+            });
+        }
+
+        // Section des sessions actives
+        this.elements.activeSessionsSection = document.getElementById('active-sessions');
+        this.elements.activeSessionsList = document.getElementById('active-sessions-list');
+        this.elements.activeSessionsCount = document.getElementById('active-sessions-count');
 
         // Modal pour les détails des sessions
         this.elements.modal = document.getElementById('session-details-modal');
@@ -89,6 +136,30 @@ export class ProjectTimerUI {
     }
 
     /**
+     * Met à jour l'UI selon le mode multi-projet
+     * @private
+     */
+    #updateMultiProjectModeUI() {
+        if (this.elements.timerDisplay) {
+            if (this.multiProjectMode) {
+                this.elements.timerDisplay.classList.add('timer-display-compact--multi-project');
+            } else {
+                this.elements.timerDisplay.classList.remove('timer-display-compact--multi-project');
+            }
+        }
+
+        // Afficher/masquer le bouton "Tout arrêter"
+        if (this.elements.stopAllBtn) {
+            if (this.multiProjectMode && this.activeSessions.length > 1) {
+                this.elements.stopAllBtn.classList.add('timer-compact__stop-all-btn--visible');
+                this.elements.stopAllBtn.disabled = false;
+            } else {
+                this.elements.stopAllBtn.classList.remove('timer-compact__stop-all-btn--visible');
+            }
+        }
+    }
+
+    /**
      * Configure les écouteurs pour les boutons de démarrage des projets
      * @param {Project[]} projects - Liste des projets
      */
@@ -112,11 +183,22 @@ export class ProjectTimerUI {
             this.elements.timerDisplay.classList.remove('timer-display-compact--stopped');
 
             if (this.elements.timerProjectName) {
-                this.elements.timerProjectName.textContent = projectName || 'Projet inconnu';
+                // En mode multi-projet avec plusieurs sessions, afficher un texte différent
+                if (this.multiProjectMode && this.activeSessions.length > 1) {
+                    this.elements.timerProjectName.textContent = `${this.activeSessions.length} projets actifs`;
+                } else {
+                    this.elements.timerProjectName.textContent = projectName || 'Projet inconnu';
+                }
             }
 
             if (this.elements.timerDuration) {
-                this.elements.timerDuration.textContent = formatDuration(duration);
+                // En mode multi-projet, afficher le temps total
+                if (this.multiProjectMode && this.activeSessions.length > 1) {
+                    const totalDuration = this.activeSessions.reduce((total, s) => total + s.duration, 0);
+                    this.elements.timerDuration.textContent = formatDuration(totalDuration);
+                } else {
+                    this.elements.timerDuration.textContent = formatDuration(duration);
+                }
             }
 
             // Activer le bouton d'arrêt
@@ -141,11 +223,102 @@ export class ProjectTimerUI {
                 this.elements.stopTimerBtn.disabled = true;
             }
         }
+
+        // Mettre à jour la section des sessions actives
+        this.#updateActiveSessionsUI();
+    }
+
+    /**
+     * Met à jour la liste des sessions actives avec les données actuelles
+     * @param {Array} sessions - Liste des sessions actives [{projectId, projectName, duration}]
+     */
+    updateActiveSessions(sessions) {
+        this.activeSessions = sessions;
+        this.#updateActiveSessionsUI();
+        this.#updateMultiProjectModeUI();
+    }
+
+    /**
+     * Met à jour l'affichage de la section des sessions actives
+     * @private
+     */
+    #updateActiveSessionsUI() {
+        if (!this.elements.activeSessionsSection || !this.elements.activeSessionsList) return;
+
+        // Afficher la section seulement si mode multi-projet et plusieurs sessions
+        if (this.multiProjectMode && this.activeSessions.length > 1) {
+            this.elements.activeSessionsSection.style.display = 'block';
+
+            // Mettre à jour le compteur
+            if (this.elements.activeSessionsCount) {
+                this.elements.activeSessionsCount.textContent = this.activeSessions.length;
+            }
+
+            // Vider et reconstruire la liste
+            this.elements.activeSessionsList.innerHTML = '';
+
+            this.activeSessions.forEach(session => {
+                const sessionItem = this.#createActiveSessionItem(session);
+                this.elements.activeSessionsList.appendChild(sessionItem);
+            });
+        } else {
+            this.elements.activeSessionsSection.style.display = 'none';
+        }
+    }
+
+    /**
+     * Crée un élément pour une session active
+     * @param {Object} session - Session active {projectId, projectName, duration}
+     * @returns {HTMLElement}
+     * @private
+     */
+    #createActiveSessionItem(session) {
+        const item = createElement('div', {
+            class: 'active-session-item',
+            dataset: {
+                projectId: session.projectId
+            }
+        });
+
+        // Indicateur de session active (point vert animé)
+        const indicator = createElement('div', {
+            class: 'active-session-item__indicator'
+        });
+
+        // Nom du projet
+        const name = createElement('span', {
+            class: 'active-session-item__name'
+        }, session.projectName);
+
+        // Durée
+        const duration = createElement('span', {
+            class: 'active-session-item__duration'
+        }, formatDuration(session.duration));
+
+        // Bouton d'arrêt
+        const stopBtn = createElement('button', {
+            class: 'active-session-item__stop-btn',
+            title: 'Arrêter ce chronomètre'
+        }, '⏹️');
+
+        stopBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onStopTimerForProject) {
+                this.onStopTimerForProject(session.projectId);
+            }
+        });
+
+        item.appendChild(indicator);
+        item.appendChild(name);
+        item.appendChild(duration);
+        item.appendChild(stopBtn);
+
+        return item;
     }
 
     /**
      * Met à jour l'indicateur du projet actif dans la liste
-     * @param {string|null} currentProjectId - ID du projet en cours
+     * @param {string|null} currentProjectId - ID du projet en cours (ou tableau d'IDs)
      */
     updateCurrentProjectIndicator(currentProjectId) {
         // Retirer tous les indicateurs existants
@@ -154,13 +327,17 @@ export class ProjectTimerUI {
             row.classList.remove('projects-table__row--active');
         });
 
-        // Ajouter l'indicateur sur le projet actif
-        if (currentProjectId) {
-            const activeRow = document.querySelector(`[data-project-id="${currentProjectId}"]`);
+        // Support pour un seul ID ou un tableau d'IDs
+        const activeIds = Array.isArray(currentProjectId) ? currentProjectId :
+            (currentProjectId ? [currentProjectId] : []);
+
+        // Ajouter l'indicateur sur tous les projets actifs
+        activeIds.forEach(projectId => {
+            const activeRow = document.querySelector(`[data-project-id="${projectId}"]`);
             if (activeRow) {
                 activeRow.classList.add('projects-table__row--active');
             }
-        }
+        });
     }
 
     /**
@@ -196,8 +373,12 @@ export class ProjectTimerUI {
      * @private
      */
     #createStatCard(stat) {
+        const cardClasses = ['project-stat-card'];
+        if (stat.isRunning) cardClasses.push('project-stat-card--running');
+        if (stat.hasOverlap) cardClasses.push('project-stat-card--overlap');
+
         const card = createElement('div', {
-            class: `project-stat-card ${stat.isRunning ? 'project-stat-card--running' : ''}`,
+            class: cardClasses.join(' '),
             dataset: {
                 projectId: stat.projectId
             }
@@ -207,6 +388,15 @@ export class ProjectTimerUI {
         card.addEventListener('click', () => {
             this.showSessionDetails(stat.projectId, stat.projectName);
         });
+
+        // Badge de chevauchement (si applicable)
+        if (stat.hasOverlap) {
+            const overlapBadge = createElement('div', {
+                class: 'project-stat-card__overlap-badge',
+                title: `Travail parallèle: ${formatDuration(stat.overlapDuration)}`
+            }, '⚡');
+            card.appendChild(overlapBadge);
+        }
 
         // En-tête avec nom et icône
         const header = createElement('div', {
@@ -228,6 +418,20 @@ export class ProjectTimerUI {
         const duration = createElement('div', {
             class: 'project-stat-card__duration'
         }, formatDuration(stat.duration));
+
+        // Indicateur de chevauchement (sous la durée)
+        if (stat.hasOverlap && stat.overlapDuration > 0) {
+            const overlapIndicator = createElement('div', {
+                class: 'overlap-indicator'
+            });
+            const overlapIcon = createElement('span', {
+                class: 'overlap-indicator__icon'
+            }, '⚡');
+            const overlapText = createElement('span', {}, formatDuration(stat.overlapDuration) + ' parallèle');
+            overlapIndicator.appendChild(overlapIcon);
+            overlapIndicator.appendChild(overlapText);
+            card.appendChild(overlapIndicator);
+        }
 
         // Barre de pourcentage
         const progressBar = createElement('div', {
