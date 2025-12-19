@@ -745,3 +745,144 @@ export class EditSessionPopover extends Popover {
         super.show(form);
     }
 }
+
+/**
+ * Popover pour exporter les sessions de projet en CSV
+ */
+export class ExportPopover extends Popover {
+    /**
+     * @param {Function} onExport - Callback appelé lors de l'export (reçoit startDate, endDate)
+     */
+    constructor(onExport) {
+        super('Exporter les sessions');
+        this.onExport = onExport;
+    }
+
+    /**
+     * Calcule le début de la semaine courante (lundi)
+     * @returns {string} Date au format YYYY-MM-DD
+     * @private
+     */
+    #getWeekStart() {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        // Si dimanche (0), on recule de 6 jours, sinon on recule de (jour - 1) jours
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - daysToMonday);
+        return monday.toISOString().split('T')[0];
+    }
+
+    /**
+     * Calcule la fin de la semaine courante (dimanche)
+     * @returns {string} Date au format YYYY-MM-DD
+     * @private
+     */
+    #getWeekEnd() {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        // Si dimanche (0), on reste sur aujourd'hui, sinon on avance de (7 - jour) jours
+        const daysToSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+        const sunday = new Date(now);
+        sunday.setDate(now.getDate() + daysToSunday);
+        return sunday.toISOString().split('T')[0];
+    }
+
+    /**
+     * Crée le formulaire d'export
+     * @returns {HTMLElement}
+     * @private
+     */
+    #createForm() {
+        const form = createElement('form', {
+            class: 'retroactive-time-form'
+        });
+
+        // Champ date de début
+        const startDateGroup = createElement('div', {
+            class: 'form-group'
+        });
+        const startDateLabel = createElement('label', {
+            class: 'form-label',
+            for: 'export-start-date'
+        }, 'Date de début');
+        const startDateInput = createElement('input', {
+            type: 'date',
+            id: 'export-start-date',
+            class: 'form-input',
+            value: this.#getWeekStart(),
+            required: true
+        });
+        startDateGroup.appendChild(startDateLabel);
+        startDateGroup.appendChild(startDateInput);
+
+        // Champ date de fin
+        const endDateGroup = createElement('div', {
+            class: 'form-group'
+        });
+        const endDateLabel = createElement('label', {
+            class: 'form-label',
+            for: 'export-end-date'
+        }, 'Date de fin');
+        const endDateInput = createElement('input', {
+            type: 'date',
+            id: 'export-end-date',
+            class: 'form-input',
+            value: this.#getWeekEnd(),
+            required: true
+        });
+        endDateGroup.appendChild(endDateLabel);
+        endDateGroup.appendChild(endDateInput);
+
+        // Boutons d'action
+        const actionsGroup = createElement('div', {
+            class: 'form-actions'
+        });
+
+        const cancelBtn = createElement('button', {
+            type: 'button',
+            class: 'btn btn--secondary'
+        }, 'Annuler');
+        cancelBtn.addEventListener('click', () => this.close());
+
+        const submitBtn = createElement('button', {
+            type: 'submit',
+            class: 'btn btn--primary'
+        }, 'Exporter');
+
+        actionsGroup.appendChild(cancelBtn);
+        actionsGroup.appendChild(submitBtn);
+
+        // Assembler le formulaire
+        form.appendChild(startDateGroup);
+        form.appendChild(endDateGroup);
+        form.appendChild(actionsGroup);
+
+        // Gérer la soumission du formulaire
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (startDate > endDate) {
+                alert('La date de début doit être avant la date de fin.');
+                return;
+            }
+
+            if (this.onExport) {
+                this.onExport(startDate, endDate);
+            }
+            this.close();
+        });
+
+        return form;
+    }
+
+    /**
+     * Affiche la popover
+     */
+    show() {
+        const form = this.#createForm();
+        super.show(form);
+    }
+}
