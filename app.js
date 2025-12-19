@@ -19,7 +19,7 @@ import { WeeklyReportCalculator } from './js/weekly-report.js';
 import { ReportsUI } from './js/reports-ui.js';
 import { EntriesManagementUI } from './js/entries-management-ui.js';
 import { SessionsManagementUI } from './js/sessions-management-ui.js';
-import { EditSessionPopover } from './js/popover.js';
+import { EditSessionPopover, ExportPopover } from './js/popover.js';
 import { DayTimeline } from './js/day-timeline.js';
 
 /**
@@ -1237,6 +1237,14 @@ class App {
      * Configure les écouteurs d'événements pour la gestion des entrées
      */
     setupEntriesManagementEventListeners() {
+        // Bouton pour ouvrir la popover d'export
+        const exportBtn = document.getElementById('export-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.openExportPopover();
+            });
+        }
+
         // Bouton pour ouvrir la vue de gestion (toutes les entrées)
         const manageEntriesBtn = document.getElementById('manage-entries-btn');
         if (manageEntriesBtn) {
@@ -1381,6 +1389,117 @@ class App {
         } catch (error) {
             console.error('❌ Erreur lors du chargement de toutes les sessions:', error);
             this.sessionsManagementUI.showError('Erreur lors du chargement des sessions');
+        }
+    }
+
+    // ======================
+    // Export CSV
+    // ======================
+
+    /**
+     * Ouvre la popover d'export
+     */
+    openExportPopover() {
+        const popover = new ExportPopover(async (startDate, endDate) => {
+            await this.exportSessionsToCSV(startDate, endDate);
+        });
+        popover.show();
+    }
+
+    /**
+     * Exporte les sessions de projet en CSV
+     * @param {string} startDate - Date de début (YYYY-MM-DD)
+     * @param {string} endDate - Date de fin (YYYY-MM-DD)
+     */
+    async exportSessionsToCSV(startDate, endDate) {
+        try {
+            // Générer la liste des dates dans la plage
+            const dates = [];
+            const current = new Date(startDate);
+            const end = new Date(endDate);
+
+            while (current <= end) {
+                dates.push(current.toISOString().split('T')[0]);
+                current.setDate(current.getDate() + 1);
+            }
+
+            // Récupérer toutes les sessions pour ces dates
+            const allSessions = [];
+            for (const date of dates) {
+                const sessions = await this.storage.getSessionsByDate(date);
+                allSessions.push(...sessions);
+            }
+
+            // Filtrer les sessions terminées (avec une date de fin)
+            const completedSessions = allSessions.filter(session => session.endTime !== null);
+
+            if (completedSessions.length === 0) {
+                this.ui.showError('Aucune session à exporter pour cette période.');
+                return;
+            }
+
+            // Trier par date de début
+            completedSessions.sort((a, b) => a.startTime - b.startTime);
+
+            // Créer une Map des noms de projets
+            const projectNames = new Map();
+            this.projects.forEach(project => {
+                projectNames.set(project.id, project.name);
+            });
+
+            // Générer le contenu CSV
+            const csvLines = [];
+            csvLines.push('"Date de début","Date de fin","Durée","Projet"');
+
+            for (const session of completedSessions) {
+                const startDateTime = session.startTime;
+                const endDateTime = session.endTime;
+
+                // Formater les dates (DD/MM/YYYY HH:MM)
+                const formatDateTime = (date) => {
+                    const d = new Date(date);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const hours = String(d.getHours()).padStart(2, '0');
+                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                    return `${day}/${month}/${year} ${hours}:${minutes}`;
+                };
+
+                // Calculer la durée
+                const durationMs = endDateTime - startDateTime;
+                const hours = Math.floor(durationMs / (1000 * 60 * 60));
+                const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                const duration = `${hours}h ${String(minutes).padStart(2, '0')}m`;
+
+                // Nom du projet
+                const projectName = projectNames.get(session.projectId) || 'Projet inconnu';
+
+                // Échapper les guillemets dans le nom du projet
+                const escapedProjectName = projectName.replace(/"/g, '""');
+
+                csvLines.push(`"${formatDateTime(startDateTime)}","${formatDateTime(endDateTime)}","${duration}","${escapedProjectName}"`);
+            }
+
+            const csvContent = csvLines.join('\n');
+
+            // Créer et télécharger le fichier
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `sessions_${startDate}_${endDate}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            this.ui.showSuccess(`${completedSessions.length} session(s) exportée(s)`);
+            console.log(`✅ Export CSV: ${completedSessions.length} sessions`);
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'export CSV:', error);
+            this.ui.showError('Erreur lors de l\'export CSV');
         }
     }
 
