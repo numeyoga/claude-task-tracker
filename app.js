@@ -136,14 +136,6 @@ class App {
         try {
             this.projects = await this.storage.getAllProjects();
 
-            // Trier les projets par ordre (si défini), sinon par date de création
-            this.projects.sort((a, b) => {
-                if (a.order !== undefined && b.order !== undefined) {
-                    return a.order - b.order;
-                }
-                return b.createdAt.getTime() - a.createdAt.getTime();
-            });
-
             console.log(`📁 ${this.projects.length} projet(s) chargé(s)`);
 
             this.updateProjectsUI();
@@ -650,35 +642,6 @@ class App {
         }
     }
 
-    /**
-     * Réorganise les projets selon le nouvel ordre
-     * @param {string[]} projectIds - Liste des IDs de projets dans le nouvel ordre
-     */
-    async reorderProjects(projectIds) {
-        try {
-            // Mettre à jour l'ordre de chaque projet
-            projectIds.forEach((projectId, index) => {
-                const project = this.projects.find(p => p.id === projectId);
-                if (project) {
-                    project.updateOrder(index);
-                }
-            });
-
-            // Sauvegarder tous les projets avec leur nouvel ordre
-            for (const project of this.projects) {
-                await this.storage.saveProject(project);
-            }
-
-            // Réorganiser le tableau local
-            this.projects.sort((a, b) => a.order - b.order);
-
-            console.log('✅ Ordre des projets sauvegardé');
-        } catch (error) {
-            console.error('❌ Erreur lors du réordonnancement des projets:', error);
-            this.projectsUI.showError('Erreur lors du réordonnancement des projets');
-        }
-    }
-
     // ======================
     // Gestion du chronomètre
     // ======================
@@ -1044,11 +1007,6 @@ class App {
         // Ajout de temps rétroactif
         this.projectsUI.onAddRetroactiveTime = (data) => {
             this.addRetroactiveTime(data);
-        };
-
-        // Réorganisation des projets
-        this.projectsUI.onReorderProjects = (projectIds) => {
-            this.reorderProjects(projectIds);
         };
 
         console.log('✅ Écouteurs d\'événements des projets configurés');

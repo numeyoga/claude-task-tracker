@@ -7,14 +7,12 @@ export class Project {
     /**
      * @param {string} name - Nom du projet
      * @param {number} timeSpent - Temps passé en millisecondes (par défaut 0)
-     * @param {number} order - Ordre du projet dans la liste (par défaut 0)
      */
-    constructor(name, timeSpent = 0, order = 0) {
+    constructor(name, timeSpent = 0) {
         this.id = this.#generateId();
         this.name = name;
         this.timeSpent = timeSpent; // en millisecondes
         this.active = true;
-        this.order = order; // ordre dans la liste
         this.createdAt = new Date();
         this.updatedAt = new Date();
     }
@@ -65,15 +63,6 @@ export class Project {
     }
 
     /**
-     * Met à jour l'ordre du projet
-     * @param {number} order - Nouvel ordre
-     */
-    updateOrder(order) {
-        this.order = order;
-        this.updatedAt = new Date();
-    }
-
-    /**
      * Convertit le projet en objet JSON pour le stockage
      * @returns {Object}
      */
@@ -83,7 +72,6 @@ export class Project {
             name: this.name,
             timeSpent: this.timeSpent,
             active: this.active,
-            order: this.order,
             createdAt: this.createdAt.toISOString(),
             updatedAt: this.updatedAt.toISOString()
         };
@@ -100,7 +88,6 @@ export class Project {
         project.name = data.name;
         project.timeSpent = data.timeSpent || 0;
         project.active = data.active !== undefined ? data.active : true;
-        project.order = data.order !== undefined ? data.order : 0;
         project.createdAt = new Date(data.createdAt);
         project.updatedAt = new Date(data.updatedAt);
         return project;
