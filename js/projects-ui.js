@@ -110,8 +110,13 @@ export class ProjectsUI {
             return;
         }
 
+        // Trier les projets par ordre alphabétique
+        const sortedProjects = [...projects].sort((a, b) =>
+            a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
+        );
+
         // Créer les lignes du tableau
-        projects.forEach(project => {
+        sortedProjects.forEach(project => {
             const row = this.#createProjectRow(project, todaySessions);
             this.elements.projectsList.appendChild(row);
         });

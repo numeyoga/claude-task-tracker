@@ -186,8 +186,15 @@ export class ReportsUI {
         // Grouper les sessions par projet
         const sessionsByProject = this.#groupSessionsByProject(report);
 
+        // Trier les projets par ordre alphabétique
+        const sortedProjectIds = Object.keys(sessionsByProject).sort((a, b) => {
+            const nameA = sessionsByProject[a].projectName;
+            const nameB = sessionsByProject[b].projectName;
+            return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
+        });
+
         // Créer une ligne pour chaque projet
-        Object.keys(sessionsByProject).forEach(projectId => {
+        sortedProjectIds.forEach(projectId => {
             const projectData = sessionsByProject[projectId];
             const row = this.#createProjectRow(projectData, weekDays);
             tbody.appendChild(row);
@@ -245,8 +252,15 @@ export class ReportsUI {
         // Grouper les sessions par projet
         const sessionsByProject = this.#groupSessionsByProject(report);
 
+        // Trier les projets par ordre alphabétique
+        const sortedProjectIds = Object.keys(sessionsByProject).sort((a, b) => {
+            const nameA = sessionsByProject[a].projectName;
+            const nameB = sessionsByProject[b].projectName;
+            return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
+        });
+
         // Créer une ligne pour chaque projet
-        Object.keys(sessionsByProject).forEach(projectId => {
+        sortedProjectIds.forEach(projectId => {
             const projectData = sessionsByProject[projectId];
             const row = this.#createProjectRowForMonth(projectData, weeks);
             tbody.appendChild(row);

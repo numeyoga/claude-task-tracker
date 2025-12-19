@@ -136,6 +136,11 @@ class App {
         try {
             this.projects = await this.storage.getAllProjects();
 
+            // Trier les projets par ordre alphabétique
+            this.projects.sort((a, b) =>
+                a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
+            );
+
             console.log(`📁 ${this.projects.length} projet(s) chargé(s)`);
 
             this.updateProjectsUI();
@@ -529,7 +534,12 @@ class App {
             await this.storage.saveProject(project);
 
             // Ajouter à la liste locale
-            this.projects.unshift(project);
+            this.projects.push(project);
+
+            // Trier les projets par ordre alphabétique
+            this.projects.sort((a, b) =>
+                a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
+            );
 
             // Mettre à jour TOUS les affichages
             await this.updateAllDisplays();
@@ -558,6 +568,11 @@ class App {
             project.updateName(newName);
 
             await this.storage.saveProject(project);
+
+            // Trier les projets par ordre alphabétique
+            this.projects.sort((a, b) =>
+                a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
+            );
 
             // Mettre à jour TOUS les affichages (important si le modal est ouvert)
             await this.updateAllDisplays();
