@@ -1447,9 +1447,9 @@ class App {
                 projectNames.set(project.id, project.name);
             });
 
-            // Générer le contenu CSV
+            // Générer le contenu CSV (format Excel avec séparateur ;)
             const csvLines = [];
-            csvLines.push('"Date de début","Date de fin","Durée (heures)","Durée (minutes)","Projet"');
+            csvLines.push('Date de début;Date de fin;Durée (heures);Durée (minutes);Projet');
 
             for (const session of completedSessions) {
                 const startDateTime = session.startTime;
@@ -1478,10 +1478,7 @@ class App {
                 // Nom du projet
                 const projectName = projectNames.get(session.projectId) || 'Projet inconnu';
 
-                // Échapper les guillemets dans le nom du projet
-                const escapedProjectName = projectName.replace(/"/g, '""');
-
-                csvLines.push(`"${formatDateTime(startDateTime)}","${formatDateTime(endDateTime)}",${durationHours},${durationMinutes},"${escapedProjectName}"`);
+                csvLines.push(`${formatDateTime(startDateTime)};${formatDateTime(endDateTime)};${durationHours};${durationMinutes};${projectName}`);
             }
 
             const csvContent = csvLines.join('\n');
