@@ -24,7 +24,6 @@ export class ProjectsUI {
         this.onDeleteProject = null;
         this.onStartProject = null;
         this.onAddRetroactiveTime = null;
-        this.onReorderProjects = null;
     }
 
     /**
@@ -100,65 +99,68 @@ export class ProjectsUI {
         this.elements.projectsList.innerHTML = '';
 
         if (!projects || projects.length === 0) {
-            const emptyDiv = createElement('div', {
-                class: 'projects-grid__empty'
+            const emptyRow = createElement('tr', {
+                class: 'projects-table__empty'
+            });
+            const emptyCell = createElement('td', {
+                colspan: '2'
             }, 'Aucun projet');
-            this.elements.projectsList.appendChild(emptyDiv);
+            emptyRow.appendChild(emptyCell);
+            this.elements.projectsList.appendChild(emptyRow);
             return;
         }
 
-        // Créer les cartes de projet
-        projects.forEach((project, index) => {
-            const card = this.#createProjectCard(project, todaySessions, index);
-            this.elements.projectsList.appendChild(card);
+        // Créer les lignes du tableau
+        projects.forEach(project => {
+            const row = this.#createProjectRow(project, todaySessions);
+            this.elements.projectsList.appendChild(row);
         });
     }
 
     /**
-     * Crée une carte de projet
+     * Crée une ligne du tableau pour un projet
      * @param {Project} project - Projet à afficher
      * @param {ProjectSession[]} todaySessions - Sessions du jour
-     * @param {number} index - Index du projet
-     * @returns {HTMLElement} Élément div
+     * @returns {HTMLElement} Élément tr
      * @private
      */
-    #createProjectCard(project, todaySessions = [], index) {
-        const card = createElement('div', {
-            class: 'project-card',
-            dataset: {
-                projectId: project.id,
-                index: index
-            },
-            draggable: 'true'
+    #createProjectRow(project, todaySessions = []) {
+        const row = createElement('tr', {
+            class: 'projects-table__row',
+            dataset: { projectId: project.id }
         });
 
-        // En-tête avec nom du projet
-        const header = createElement('div', {
-            class: 'project-card__header'
+        // Colonne nom uniquement
+        const nameCell = createElement('td', {
+            class: 'projects-table__cell projects-table__cell--name'
         });
 
         const nameDisplay = createElement('div', {
-            class: 'project-card__name'
+            class: 'projects-table__name'
         }, project.name);
 
-        header.appendChild(nameDisplay);
+        nameCell.appendChild(nameDisplay);
+
+        // Colonne actions
+        const actionsCell = createElement('td', {
+            class: 'projects-table__cell projects-table__cell--actions'
+        });
+
+        const actionsContainer = createElement('div', {
+            class: 'projects-table__actions'
+        });
 
         // Calculer le temps passé aujourd'hui sur ce projet
         const dailyTime = this.#calculateDailyTime(project.id, todaySessions);
 
         // Affichage du temps passé aujourd'hui
         const timeDisplay = createElement('div', {
-            class: 'project-card__time'
+            class: 'projects-table__time'
         }, formatDuration(dailyTime));
-
-        // Conteneur des boutons
-        const actionsContainer = createElement('div', {
-            class: 'project-card__actions'
-        });
 
         // Bouton démarrer le chronomètre
         const startBtn = createElement('button', {
-            class: 'project-card__btn project-card__btn--start',
+            class: 'projects-table__btn projects-table__btn--start',
             title: 'Démarrer le chronomètre',
             dataset: { action: 'start', projectId: project.id }
         }, '▶️');
@@ -168,7 +170,7 @@ export class ProjectsUI {
 
         // Bouton modifier le nom
         const editNameBtn = createElement('button', {
-            class: 'project-card__btn project-card__btn--edit',
+            class: 'projects-table__btn projects-table__btn--edit',
             title: 'Modifier le nom'
         }, '✏️');
         editNameBtn.addEventListener('click', () => {
@@ -177,7 +179,7 @@ export class ProjectsUI {
 
         // Bouton ajouter du temps rétroactif
         const addRetroactiveBtn = createElement('button', {
-            class: 'project-card__btn project-card__btn--retroactive',
+            class: 'projects-table__btn projects-table__btn--retroactive',
             title: 'Ajouter du temps'
         }, '📅');
         addRetroactiveBtn.addEventListener('click', () => {
@@ -186,92 +188,24 @@ export class ProjectsUI {
 
         // Bouton supprimer
         const deleteBtn = createElement('button', {
-            class: 'project-card__btn project-card__btn--delete',
+            class: 'projects-table__btn projects-table__btn--delete',
             title: 'Supprimer le projet'
         }, '🗑️');
         deleteBtn.addEventListener('click', () => {
             this.#handleDelete(project);
         });
 
+        actionsContainer.appendChild(timeDisplay);
         actionsContainer.appendChild(startBtn);
         actionsContainer.appendChild(editNameBtn);
         actionsContainer.appendChild(addRetroactiveBtn);
         actionsContainer.appendChild(deleteBtn);
+        actionsCell.appendChild(actionsContainer);
 
-        card.appendChild(header);
-        card.appendChild(timeDisplay);
-        card.appendChild(actionsContainer);
+        row.appendChild(nameCell);
+        row.appendChild(actionsCell);
 
-        // Événements drag & drop
-        this.#attachDragEvents(card);
-
-        return card;
-    }
-
-    /**
-     * Attache les événements de drag & drop à une carte
-     * @param {HTMLElement} card - Carte de projet
-     * @private
-     */
-    #attachDragEvents(card) {
-        card.addEventListener('dragstart', (e) => {
-            card.classList.add('project-card--dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', card.innerHTML);
-        });
-
-        card.addEventListener('dragend', () => {
-            card.classList.remove('project-card--dragging');
-            this.#saveProjectOrder();
-        });
-
-        card.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-
-            const afterElement = this.#getDragAfterElement(e.clientY);
-            const draggingCard = document.querySelector('.project-card--dragging');
-
-            if (afterElement == null) {
-                this.elements.projectsList.appendChild(draggingCard);
-            } else {
-                this.elements.projectsList.insertBefore(draggingCard, afterElement);
-            }
-        });
-    }
-
-    /**
-     * Détermine l'élément après lequel insérer la carte en cours de drag
-     * @param {number} y - Position Y de la souris
-     * @returns {HTMLElement|null} Élément après lequel insérer
-     * @private
-     */
-    #getDragAfterElement(y) {
-        const draggableElements = [...this.elements.projectsList.querySelectorAll('.project-card:not(.project-card--dragging)')];
-
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    /**
-     * Sauvegarde l'ordre des projets après drag & drop
-     * @private
-     */
-    #saveProjectOrder() {
-        if (!this.onReorderProjects) return;
-
-        const cards = [...this.elements.projectsList.querySelectorAll('.project-card')];
-        const projectIds = cards.map(card => card.dataset.projectId);
-
-        this.onReorderProjects(projectIds);
+        return row;
     }
 
     /**
