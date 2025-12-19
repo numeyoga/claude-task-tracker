@@ -1449,7 +1449,7 @@ class App {
 
             // Générer le contenu CSV
             const csvLines = [];
-            csvLines.push('"Date de début","Date de fin","Durée","Projet"');
+            csvLines.push('"Date de début","Date de fin","Durée (heures)","Durée (minutes)","Projet"');
 
             for (const session of completedSessions) {
                 const startDateTime = session.startTime;
@@ -1466,11 +1466,14 @@ class App {
                     return `${day}/${month}/${year} ${hours}:${minutes}`;
                 };
 
-                // Calculer la durée
+                // Calculer la durée en millisecondes
                 const durationMs = endDateTime - startDateTime;
-                const hours = Math.floor(durationMs / (1000 * 60 * 60));
-                const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-                const duration = `${hours}h ${String(minutes).padStart(2, '0')}m`;
+
+                // Durée en heures décimales (format numérique pour Excel)
+                const durationHours = (durationMs / (1000 * 60 * 60)).toFixed(2);
+
+                // Durée en minutes décimales (format numérique alternatif)
+                const durationMinutes = Math.round(durationMs / (1000 * 60));
 
                 // Nom du projet
                 const projectName = projectNames.get(session.projectId) || 'Projet inconnu';
@@ -1478,7 +1481,7 @@ class App {
                 // Échapper les guillemets dans le nom du projet
                 const escapedProjectName = projectName.replace(/"/g, '""');
 
-                csvLines.push(`"${formatDateTime(startDateTime)}","${formatDateTime(endDateTime)}","${duration}","${escapedProjectName}"`);
+                csvLines.push(`"${formatDateTime(startDateTime)}","${formatDateTime(endDateTime)}",${durationHours},${durationMinutes},"${escapedProjectName}"`);
             }
 
             const csvContent = csvLines.join('\n');
